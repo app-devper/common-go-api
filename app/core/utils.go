@@ -1,11 +1,11 @@
-package repository
+package core
 
 import (
 	"context"
 	"time"
 )
 
-func initContext() (context.Context, context.CancelFunc) {
+func InitContext() (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	return ctx, cancel
 }

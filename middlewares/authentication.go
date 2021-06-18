@@ -4,7 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"mgo-gin/app/model"
+	"mgo-gin/app/featues/user/model"
 	"net/http"
 	"strings"
 	"time"
@@ -14,8 +14,8 @@ import (
 var jwtKey = []byte("uit_secret_key")
 
 type Claims struct {
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	UserId string `json:"userId"`
+	Role   string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -25,8 +25,8 @@ func GenerateJwtToken(user model.User) string {
 	expirationTime := time.Now().Add(24 * time.Hour)
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
-		Username: user.Username,
-		Role:     user.Role,
+		UserId: user.Id.Hex(),
+		Role:   user.Role,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
@@ -58,22 +58,17 @@ func RequireAuthenticated() gin.HandlerFunc {
 		tkn, err := jwt.ParseWithClaims(jwtToken[1], claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
-
-		c.Set("Username", claims.Username)
-
-		logrus.Info("Username: " + claims.Username)
-
 		if err != nil {
-			if err == jwt.ErrSignatureInvalid {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-				return
-			}
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		if tkn == nil || !tkn.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid authorization header"})
+			return
 		}
+		c.Set("UserId", claims.UserId)
+		c.Set("Role", claims.Role)
+		logrus.Info("UserId: " + claims.UserId)
 		return
 	}
 }

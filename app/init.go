@@ -3,7 +3,8 @@ package app
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"mgo-gin/app/api"
+	"mgo-gin/app/featues/notification"
+	"mgo-gin/app/featues/user"
 	"mgo-gin/db"
 	"mgo-gin/middlewares"
 	"net/http"
@@ -28,10 +29,12 @@ func (app Routes) StartGin() {
 
 	publicRoute := r.Group("/api/v1")
 
-	api.ApplyUserAPI(publicRoute, resource)
+	user.ApplyUserAPI(publicRoute, resource)
+	notification.ApplyNotificationAPI(publicRoute, resource)
 
 	r.NoRoute(func(context *gin.Context) {
 		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service Missing / Not found."})
 	})
-	r.Run(":" + os.Getenv("PORT"))
+
+	_ = r.Run(":" + os.Getenv("PORT"))
 }
