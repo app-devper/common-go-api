@@ -53,13 +53,14 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 			return nil, http.StatusBadRequest, err
 		}
 		return &subscription, http.StatusOK, nil
+	} else {
+		_, err := entity.repo.InsertOne(ctx, subscription)
+		if err != nil {
+			logrus.Error(err)
+			return nil, http.StatusBadRequest, err
+		}
+		return &subscription, http.StatusOK, nil
 	}
-	_, err := entity.repo.InsertOne(ctx, subscription)
-	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
-	}
-	return &subscription, http.StatusOK, nil
 }
 
 func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscription, int, error) {

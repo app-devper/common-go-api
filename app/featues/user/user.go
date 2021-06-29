@@ -20,6 +20,7 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	userRoute.Use(middlewares.RequireAuthenticated())
 	userRoute.GET("/info", getUserInfo(userEntity))
 	userRoute.PUT("/info", updateUserInfo(userEntity))
+	userRoute.GET("/keep-alive", keepAlive(userEntity))
 
 	// ADMIN
 	userRoute.GET("/:id", middlewares.RequireAuthorization(constant.ADMIN), getUserById(userEntity))
@@ -31,7 +32,7 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 
 func login(userEntity repository.IUser) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
-		userRequest := form.User{}
+		userRequest := form.Login{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -44,7 +45,6 @@ func login(userEntity repository.IUser) func(ctx *gin.Context) {
 		token := middlewares.GenerateJwtToken(*user)
 		response := gin.H{
 			"accessToken": token,
-			"type":        "bearer",
 		}
 		ctx.JSON(code, response)
 	}
@@ -100,6 +100,22 @@ func getUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 		}
 		response := gin.H{
 			"user": user,
+		}
+		ctx.JSON(code, response)
+	}
+}
+
+func keepAlive(userEntity repository.IUser) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		userId, _ := ctx.Get("UserId")
+		user, code, err := userEntity.GetOneById(userId.(string))
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		token := middlewares.GenerateJwtToken(*user)
+		response := gin.H{
+			"accessToken": token,
 		}
 		ctx.JSON(code, response)
 	}
@@ -186,7 +202,7 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			return
 		}
 		id := ctx.Param("id")
-		userRequest := form.User{}
+		userRequest := form.Login{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -212,7 +228,7 @@ func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest := form.User{}
+		userRequest := form.Login{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

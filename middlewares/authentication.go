@@ -40,7 +40,7 @@ func GenerateJwtToken(user model.User) string {
 	// Create the JWT string
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		logrus.Print(err)
+		logrus.Error(err)
 	}
 	return tokenString
 }

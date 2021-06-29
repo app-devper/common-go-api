@@ -29,7 +29,7 @@ type IUser interface {
 	GetOneById(id string) (*model.User, int, error)
 	CreateOne(userForm form.User) (*model.User, int, error)
 	RemoveOneById(id string) (*model.User, int, error)
-	UpdateUserById(id string, userForm form.User) (*model.User, int, error)
+	UpdateUserById(id string, userForm form.Login) (*model.User, int, error)
 }
 
 func NewUserEntity(resource *db.Resource) IUser {
@@ -87,7 +87,9 @@ func (entity *userEntity) CreateOne(userForm form.User) (*model.User, int, error
 	}
 	found, _, _ := entity.GetOneByUsername(user.Username)
 	if found != nil {
-		return nil, http.StatusConflict, errors.New("username is taken")
+		err := errors.New("username is taken")
+		logrus.Error(err)
+		return nil, http.StatusConflict, err
 	}
 	_, err := entity.repo.InsertOne(ctx, user)
 	if err != nil {
@@ -130,13 +132,14 @@ func (entity *userEntity) RemoveOneById(id string) (*model.User, int, error) {
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) UpdateUserById(id string, userForm form.User) (*model.User, int, error) {
+func (entity *userEntity) UpdateUserById(id string, userForm form.Login) (*model.User, int, error) {
 	logrus.Info("UpdateUserById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, _, err := entity.GetOneById(id)
 	if err != nil {
+		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
 	err = copier.Copy(user, userForm) // this is why we need return a pointer: to copy value

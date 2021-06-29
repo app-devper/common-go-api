@@ -19,13 +19,13 @@ func ApplyNotificationAPI(app *gin.RouterGroup, resource *db.Resource) {
 func subscription(notificationEntity repository.INotification) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		request := form.Subscription{}
-		if err := ctx.Bind(&request); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := ctx.ShouldBind(&request); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		subscription, code, err := notificationEntity.Subscription(request)
 		if err != nil {
-			ctx.JSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
 		response := gin.H{
