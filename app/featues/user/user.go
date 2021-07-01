@@ -63,10 +63,7 @@ func signUp(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -83,10 +80,7 @@ func getAllUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": list,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, list)
 	}
 }
 
@@ -98,10 +92,7 @@ func getUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -135,10 +126,7 @@ func getUserById(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -160,10 +148,7 @@ func deleteUserById(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -186,10 +171,7 @@ func addUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -213,10 +195,7 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }
 
@@ -239,9 +218,6 @@ func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"user": user,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, user)
 	}
 }

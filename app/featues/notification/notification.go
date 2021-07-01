@@ -23,14 +23,11 @@ func subscription(notificationEntity repository.INotification) func(ctx *gin.Con
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		subscription, code, err := notificationEntity.Subscription(request)
+		device, code, err := notificationEntity.Subscription(request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"subscription": subscription,
-		}
-		ctx.JSON(code, response)
+		ctx.JSON(code, device)
 	}
 }
