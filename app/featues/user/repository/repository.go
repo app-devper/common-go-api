@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"github.com/jinzhu/copier"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -142,17 +141,14 @@ func (entity *userEntity) UpdateUserById(id string, userForm form.Login) (*model
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
-	err = copier.Copy(user, userForm) // this is why we need return a pointer: to copy value
-	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
-	}
+	user.Username = userForm.Username
+	user.Password = userForm.Password
 
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
 		ReturnDocument: &isReturnNewDoc,
 	}
-	err = entity.repo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(user)
+	err = entity.repo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusBadRequest, err

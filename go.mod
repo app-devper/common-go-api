@@ -7,7 +7,6 @@ require (
 	github.com/ekyoung/gin-nice-recovery v0.0.0-20160510022553-1654dca486db
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-errors/errors v1.4.0 // indirect
-	github.com/jinzhu/copier v0.3.2
 	github.com/joho/godotenv v1.3.0
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.8.1
