@@ -79,10 +79,12 @@ func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	user := model.User{
-		Id:       primitive.NewObjectID(),
-		Username: form.Username,
-		Password: form.Password,
-		Role:     constant.USER,
+		Id:        primitive.NewObjectID(),
+		FirstName: form.FirstName,
+		LastName:  form.LastName,
+		Username:  form.Username,
+		Password:  form.Password,
+		Role:      constant.USER,
 	}
 	found, _, _ := entity.GetOneByUsername(user.Username)
 	if found != nil {
