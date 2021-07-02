@@ -166,6 +166,7 @@ func addUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		userRequest.CreatedBy = userId.(string)
 		user, code, err := userEntity.CreateOne(userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
@@ -190,6 +191,7 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		userRequest.UpdatedBy = userId.(string)
 		user, code, err := userEntity.UpdateUserById(id, userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
@@ -213,6 +215,7 @@ func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		userRequest.UpdatedBy = userId.(string)
 		user, code, err := userEntity.UpdateUserById(userId.(string), userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})

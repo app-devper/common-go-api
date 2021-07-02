@@ -13,6 +13,7 @@ import (
 	"mgo-gin/db"
 	"mgo-gin/utils/constant"
 	"net/http"
+	"time"
 )
 
 var UserEntity IUser
@@ -78,19 +79,30 @@ func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 	logrus.Info("CreateOne")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	user := model.User{
-		Id:        primitive.NewObjectID(),
-		FirstName: form.FirstName,
-		LastName:  form.LastName,
-		Username:  form.Username,
-		Password:  form.Password,
-		Role:      constant.USER,
-	}
-	found, _, _ := entity.GetOneByUsername(user.Username)
+	found, _, _ := entity.GetOneByUsername(form.Username)
 	if found != nil {
 		err := errors.New("username is taken")
 		logrus.Error(err)
 		return nil, http.StatusConflict, err
+	}
+
+	var userId = primitive.NewObjectID()
+	var createdBy = userId
+	if form.CreatedBy != "" {
+		createdBy, _ = primitive.ObjectIDFromHex(form.CreatedBy)
+	}
+	user := model.User{
+		Id:          userId,
+		FirstName:   form.FirstName,
+		LastName:    form.LastName,
+		Username:    form.Username,
+		Password:    form.Password,
+		Role:        constant.USER,
+		Status:      constant.ACTIVE,
+		CreatedBy:   createdBy,
+		CreatedDate: time.Now(),
+		UpdatedBy:   createdBy,
+		UpdatedDate: time.Now(),
 	}
 	_, err := entity.repo.InsertOne(ctx, user)
 	if err != nil {
@@ -147,6 +159,8 @@ func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User
 	user.LastName = form.LastName
 	user.Username = form.Username
 	user.Password = form.Password
+	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
+	user.UpdatedDate = time.Now()
 
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{

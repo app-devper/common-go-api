@@ -5,4 +5,6 @@ type User struct {
 	LastName  string `json:"lastName"`
 	Username  string `json:"username" binding:"required"`
 	Password  string `json:"password" binding:"required"`
+	CreatedBy string
+	UpdatedBy string
 }
