@@ -184,7 +184,7 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			return
 		}
 		id := ctx.Param("id")
-		userRequest := form.Login{}
+		userRequest := form.User{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -207,7 +207,7 @@ func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest := form.Login{}
+		userRequest := form.User{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

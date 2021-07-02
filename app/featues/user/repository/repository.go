@@ -26,9 +26,9 @@ type IUser interface {
 	GetAll() ([]model.User, int, error)
 	GetOneByUsername(username string) (*model.User, int, error)
 	GetOneById(id string) (*model.User, int, error)
-	CreateOne(userForm form.User) (*model.User, int, error)
+	CreateOne(form form.User) (*model.User, int, error)
 	RemoveOneById(id string) (*model.User, int, error)
-	UpdateUserById(id string, userForm form.Login) (*model.User, int, error)
+	UpdateUserById(id string, form form.User) (*model.User, int, error)
 }
 
 func NewUserEntity(resource *db.Resource) IUser {
@@ -74,14 +74,14 @@ func (entity *userEntity) GetOneByUsername(username string) (*model.User, int, e
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) CreateOne(userForm form.User) (*model.User, int, error) {
+func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 	logrus.Info("CreateOne")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	user := model.User{
 		Id:       primitive.NewObjectID(),
-		Username: userForm.Username,
-		Password: userForm.Password,
+		Username: form.Username,
+		Password: form.Password,
 		Role:     constant.USER,
 	}
 	found, _, _ := entity.GetOneByUsername(user.Username)
@@ -131,7 +131,7 @@ func (entity *userEntity) RemoveOneById(id string) (*model.User, int, error) {
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) UpdateUserById(id string, userForm form.Login) (*model.User, int, error) {
+func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User, int, error) {
 	logrus.Info("UpdateUserById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -141,8 +141,10 @@ func (entity *userEntity) UpdateUserById(id string, userForm form.Login) (*model
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
-	user.Username = userForm.Username
-	user.Password = userForm.Password
+	user.FirstName = form.FirstName
+	user.LastName = form.LastName
+	user.Username = form.Username
+	user.Password = form.Password
 
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
