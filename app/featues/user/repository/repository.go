@@ -11,6 +11,7 @@ import (
 	"mgo-gin/app/featues/user/form"
 	"mgo-gin/app/featues/user/model"
 	"mgo-gin/db"
+	"mgo-gin/utils/bcrypt"
 	"mgo-gin/utils/constant"
 	"net/http"
 	"time"
@@ -96,7 +97,7 @@ func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 		FirstName:   form.FirstName,
 		LastName:    form.LastName,
 		Username:    form.Username,
-		Password:    form.Password,
+		Password:    bcrypt.HashPassword(form.Password),
 		Role:        constant.USER,
 		Status:      constant.ACTIVE,
 		CreatedBy:   createdBy,
@@ -158,7 +159,7 @@ func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User
 	user.FirstName = form.FirstName
 	user.LastName = form.LastName
 	user.Username = form.Username
-	user.Password = form.Password
+	user.Password = bcrypt.HashPassword(form.Password)
 	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
 	user.UpdatedDate = time.Now()
 

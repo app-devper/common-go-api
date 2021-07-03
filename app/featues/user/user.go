@@ -6,6 +6,7 @@ import (
 	"mgo-gin/app/featues/user/repository"
 	"mgo-gin/db"
 	"mgo-gin/middlewares"
+	"mgo-gin/utils/bcrypt"
 	"mgo-gin/utils/constant"
 	"net/http"
 )
@@ -38,8 +39,8 @@ func login(userEntity repository.IUser) func(ctx *gin.Context) {
 			return
 		}
 		user, code, _ := userEntity.GetOneByUsername(userRequest.Username)
-		if (user == nil) || userRequest.Password != user.Password {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong username or password"})
+		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "Wrong username or password"})
 			return
 		}
 		token := middlewares.GenerateJwtToken(*user)

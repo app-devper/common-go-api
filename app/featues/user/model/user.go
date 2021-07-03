@@ -14,6 +14,7 @@ type User struct {
 	Role        string             `bson:"role" json:"role"`
 	Status      string             `bson:"status" json:"status"`
 	Phone       string             `bson:"phone" json:"phone"`
+	Email       string             `bson:"email" json:"email"`
 	UpdatedBy   primitive.ObjectID `bson:"updatedBy" json:"updatedBy"`
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 	CreatedBy   primitive.ObjectID `bson:"createdBy" json:"createdBy"`
