@@ -1,10 +1,15 @@
 package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
+)
 
 type Subscription struct {
-	UserId      primitive.ObjectID `bson:"_id" json:"id"`
+	Id          primitive.ObjectID `bson:"_id" json:"id"`
+	UserId      primitive.ObjectID `bson:"userId" json:"userId"`
 	Channel     string             `bson:"channel" json:"channel"`
 	DeviceToken string             `bson:"deviceToken" json:"deviceToken"`
-	CreatedDate string             `bson:"createdDate" json:"createdDate"`
+	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
+	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 }

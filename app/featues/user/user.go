@@ -13,14 +13,23 @@ import (
 
 func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	userEntity := repository.NewUserEntity(resource)
+
 	authRoute := app.Group("auth")
 	authRoute.POST("/login", login(userEntity))
 	authRoute.POST("/sign-up", signUp(userEntity))
+
+	authRoute.POST("/verification/user", verifyUser(userEntity))
+	authRoute.POST("/verification/request", verifyRequest(userEntity))
+	authRoute.POST("/verification/code", verifyCode(userEntity))
+
+	authRoute.GET("/action/info", middlewares.RequireActionToken(), verifyActionToken(userEntity))
+	authRoute.POST("/action/set-password", middlewares.RequireActionToken(), setPassword(userEntity))
 
 	userRoute := app.Group("/user")
 	userRoute.Use(middlewares.RequireAuthenticated())
 	userRoute.GET("/info", getUserInfo(userEntity))
 	userRoute.PUT("/info", updateUserInfo(userEntity))
+	userRoute.PUT("/change-password", changePassword(userEntity))
 	userRoute.GET("/keep-alive", keepAlive(userEntity))
 
 	// ADMIN
@@ -31,7 +40,7 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	userRoute.PUT("/:id", middlewares.RequireAuthorization(constant.ADMIN), updateUser(userEntity))
 }
 
-func login(userEntity repository.IUser) func(ctx *gin.Context) {
+func login(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRequest := form.Login{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
@@ -51,7 +60,7 @@ func login(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func signUp(userEntity repository.IUser) func(ctx *gin.Context) {
+func signUp(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRequest := form.User{}
 		err := ctx.ShouldBind(&userRequest)
@@ -68,10 +77,151 @@ func signUp(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func getAllUser(userEntity repository.IUser) func(ctx *gin.Context) {
+func verifyUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		_, code, err := userEntity.GetOneById(userId.(string))
+		userRequest := form.VerifyUser{}
+		if err := ctx.ShouldBind(&userRequest); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		user, _, err := userEntity.GetOneByUsername(userRequest.Username)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		userRef, code, err := userEntity.CreateVerification(user.Id.Hex(), userRequest.Objective)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		channels := []form.Channel{{
+			Channel:     "MOBILE",
+			ChannelInfo: user.Phone,
+		}, {
+			Channel:     "EMAIL",
+			ChannelInfo: user.Email,
+		}}
+		response := gin.H{
+			"userRefId":      userRef.Id,
+			"verifyChannels": channels,
+		}
+		ctx.JSON(code, response)
+	}
+}
+
+func verifyRequest(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userRequest := form.VerifyRequest{}
+		if err := ctx.ShouldBind(&userRequest); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		userRef, code, err := userEntity.GetVerificationById(userRequest.UserRefId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Status == constant.ACTIVE {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "user ref is active"})
+			return
+		}
+		userRef, code, err = userEntity.UpdateVerification(userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, userRef)
+	}
+}
+
+func verifyCode(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userRequest := form.VerifyCode{}
+		if err := ctx.ShouldBind(&userRequest); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		userRef, code, err := userEntity.GetVerificationById(userRequest.UserRefId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Status == constant.ACTIVE {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "user ref is active"})
+			return
+		}
+		if userRequest.RefId != userRef.RefId || userRequest.Code != userRef.Code {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "Wrong code"})
+			return
+		}
+		userRef, code, err = userEntity.ActiveVerification(userRequest.UserRefId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		token := middlewares.GenerateActionToken(userRequest.UserRefId)
+		response := gin.H{
+			"actionToken": token,
+		}
+		ctx.JSON(code, response)
+	}
+}
+
+func verifyActionToken(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userRefId := ctx.GetString("UserRefId")
+		userRef, code, err := userEntity.GetVerificationById(userRefId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		user, code, err := userEntity.GetOneById(userRef.UserId.Hex())
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, user)
+	}
+}
+
+func setPassword(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userRefId := ctx.GetString("UserRefId")
+		userRef, code, err := userEntity.GetVerificationById(userRefId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Objective != "SET_PASSWORD" {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": "Wrong objective"})
+			return
+		}
+		user, code, err := userEntity.GetOneById(userRef.UserId.Hex())
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		userRequest := form.SetPassword{}
+		err = ctx.ShouldBind(&userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		user, code, err = userEntity.SetPassword(user.Id.Hex(), userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		_, _, _ = userEntity.RemoveVerification(userRefId)
+		ctx.JSON(code, user)
+	}
+}
+
+func getAllUser(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -85,10 +235,10 @@ func getAllUser(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func getUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
+func getUserInfo(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		user, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		user, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -97,10 +247,10 @@ func getUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func keepAlive(userEntity repository.IUser) func(ctx *gin.Context) {
+func keepAlive(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		user, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		user, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -113,10 +263,10 @@ func keepAlive(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func getUserById(userEntity repository.IUser) func(ctx *gin.Context) {
+func getUserById(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		_, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -131,10 +281,10 @@ func getUserById(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func deleteUserById(userEntity repository.IUser) func(ctx *gin.Context) {
+func deleteUserById(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		found, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		found, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -153,10 +303,10 @@ func deleteUserById(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func addUser(userEntity repository.IUser) func(ctx *gin.Context) {
+func addUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		_, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -167,7 +317,7 @@ func addUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest.CreatedBy = userId.(string)
+		userRequest.CreatedBy = userId
 		user, code, err := userEntity.CreateOne(userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
@@ -177,10 +327,10 @@ func addUser(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
+func updateUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		_, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -192,7 +342,7 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest.UpdatedBy = userId.(string)
+		userRequest.UpdatedBy = userId
 		user, code, err := userEntity.UpdateUserById(id, userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
@@ -202,10 +352,10 @@ func updateUser(userEntity repository.IUser) func(ctx *gin.Context) {
 	}
 }
 
-func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
+func updateUserInfo(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId, _ := ctx.Get("UserId")
-		_, code, err := userEntity.GetOneById(userId.(string))
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetOneById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -216,8 +366,35 @@ func updateUserInfo(userEntity repository.IUser) func(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest.UpdatedBy = userId.(string)
-		user, code, err := userEntity.UpdateUserById(userId.(string), userRequest)
+		userRequest.UpdatedBy = userId
+		user, code, err := userEntity.UpdateUserById(userId, userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, user)
+	}
+}
+
+func changePassword(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userId := ctx.GetString("UserId")
+		user, code, err := userEntity.GetOneById(userId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		userRequest := form.ChangePassword{}
+		err = ctx.ShouldBind(&userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.OldPassword, user.Password) != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": "Wrong password"})
+			return
+		}
+		user, code, err = userEntity.ChangePassword(userId, userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return

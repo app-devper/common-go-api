@@ -19,6 +19,11 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+type ActionClaims struct {
+	UserRefId string `json:"userRefId"`
+	jwt.StandardClaims
+}
+
 func GenerateJwtToken(user model.User) string {
 	// Declare the expiration time of the token
 	// here, we have kept it as 5 minutes
@@ -38,6 +43,22 @@ func GenerateJwtToken(user model.User) string {
 	// Declare the token with the algorithm used for signing, and the claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// Create the JWT string
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		logrus.Error(err)
+	}
+	return tokenString
+}
+
+func GenerateActionToken(userRefId string) string {
+	expirationTime := time.Now().Add(3 * time.Minute)
+	claims := &ActionClaims{
+		UserRefId: userRefId,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		logrus.Error(err)
@@ -69,6 +90,31 @@ func RequireAuthenticated() gin.HandlerFunc {
 		c.Set("UserId", claims.UserId)
 		c.Set("Role", claims.Role)
 		logrus.Info("UserId: " + claims.UserId)
+		return
+	}
+}
+
+func RequireActionToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("X-Action-Token")
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing action token header"})
+			return
+		}
+		claims := &ActionClaims{}
+		tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if tkn == nil || !tkn.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid action token header"})
+			return
+		}
+		c.Set("UserRefId", claims.UserRefId)
+		logrus.Info("UserRefId: " + claims.UserRefId)
 		return
 	}
 }

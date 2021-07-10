@@ -15,8 +15,8 @@ type User struct {
 	Status      string             `bson:"status" json:"status"`
 	Phone       string             `bson:"phone" json:"phone"`
 	Email       string             `bson:"email" json:"email"`
-	UpdatedBy   primitive.ObjectID `bson:"updatedBy" json:"updatedBy"`
-	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 	CreatedBy   primitive.ObjectID `bson:"createdBy" json:"createdBy"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
+	UpdatedBy   primitive.ObjectID `bson:"updatedBy" json:"updatedBy"`
+	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 }

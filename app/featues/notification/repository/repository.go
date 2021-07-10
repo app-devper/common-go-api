@@ -35,25 +35,27 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 	logrus.Info("Subscription")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	objId, _ := primitive.ObjectIDFromHex(form.UserId)
+	userId, _ := primitive.ObjectIDFromHex(form.UserId)
 	subscription := model.Subscription{
-		UserId:      objId,
+		UserId:      userId,
 		DeviceToken: form.DeviceToken,
 		Channel:     form.Channel,
 	}
 	found, _, _ := entity.GetOneByUserId(form.UserId)
 	if found != nil {
+		subscription.Id = found.Id
 		isReturnNewDoc := options.After
 		opts := &options.FindOneAndUpdateOptions{
 			ReturnDocument: &isReturnNewDoc,
 		}
-		err := entity.repo.FindOneAndUpdate(ctx, bson.M{"userId": objId}, bson.M{"$set": subscription}, opts).Decode(&subscription)
+		err := entity.repo.FindOneAndUpdate(ctx, bson.M{"userId": userId}, bson.M{"$set": subscription}, opts).Decode(&subscription)
 		if err != nil {
 			logrus.Error(err)
 			return nil, http.StatusBadRequest, err
 		}
 		return &subscription, http.StatusOK, nil
 	} else {
+		subscription.Id = primitive.NewObjectID()
 		_, err := entity.repo.InsertOne(ctx, subscription)
 		if err != nil {
 			logrus.Error(err)

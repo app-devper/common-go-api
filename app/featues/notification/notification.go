@@ -11,12 +11,13 @@ import (
 
 func ApplyNotificationAPI(app *gin.RouterGroup, resource *db.Resource) {
 	notificationEntity := repository.NewNotificationEntity(resource)
+
 	notificationRoute := app.Group("notification")
 	notificationRoute.Use(middlewares.RequireAuthenticated())
 	notificationRoute.POST("/subscription", subscription(notificationEntity))
 }
 
-func subscription(notificationEntity repository.INotification) func(ctx *gin.Context) {
+func subscription(notificationEntity repository.INotification) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		request := form.Subscription{}
 		if err := ctx.ShouldBind(&request); err != nil {
