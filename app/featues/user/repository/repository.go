@@ -26,6 +26,7 @@ type userEntity struct {
 }
 
 type IUser interface {
+	CreateIndex() (string, error)
 	GetAll() ([]model.User, int, error)
 	GetOneByUsername(username string) (*model.User, int, error)
 	GetOneById(id string) (*model.User, int, error)
@@ -33,6 +34,7 @@ type IUser interface {
 	RemoveOneById(id string) (*model.User, int, error)
 	UpdateUserById(id string, form form.User) (*model.User, int, error)
 	ChangePassword(id string, form form.ChangePassword) (*model.User, int, error)
+
 	SetPassword(id string, form form.SetPassword) (*model.User, int, error)
 	CreateVerification(id string, objective string) (*model.UserReference, int, error)
 	UpdateVerification(form form.VerifyRequest) (*model.UserReference, int, error)
@@ -46,6 +48,19 @@ func NewUserEntity(resource *db.Resource) IUser {
 	verifyRepo := resource.DB.Collection("verifications")
 	UserEntity = &userEntity{resource: resource, userRepo: userRepo, verifyRepo: verifyRepo}
 	return UserEntity
+}
+
+func (entity *userEntity) CreateIndex() (string, error) {
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	mod := mongo.IndexModel{
+		Keys: bson.M{
+			"username": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	}
+	ind, err := entity.userRepo.Indexes().CreateOne(ctx, mod)
+	return ind, err
 }
 
 func (entity *userEntity) GetAll() ([]model.User, int, error) {
@@ -334,6 +349,10 @@ func (entity *userEntity) RemoveVerification(userRefId string) (*model.UserRefer
 		logrus.Error(err)
 		return nil, http.StatusBadRequest, err
 	}
-	_, _ = entity.verifyRepo.DeleteOne(ctx, bson.M{"_id": objId})
+	_, err = entity.verifyRepo.DeleteOne(ctx, bson.M{"_id": objId})
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
 	return &user, http.StatusOK, nil
 }

@@ -1,5 +1,10 @@
 package form
 
+type Login struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
 type VerifyUser struct {
 	Username  string `json:"username" binding:"required"`
 	Objective string `json:"objective" binding:"required"`
