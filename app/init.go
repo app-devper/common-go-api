@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"mgo-gin/app/featues/notification"
+	"mgo-gin/app/featues/order"
 	"mgo-gin/app/featues/product"
 	"mgo-gin/app/featues/user"
 	"mgo-gin/db"
@@ -33,6 +34,7 @@ func (app Routes) StartGin() {
 	user.ApplyUserAPI(publicRoute, resource)
 	notification.ApplyNotificationAPI(publicRoute, resource)
 	product.ApplyProductAPI(publicRoute, resource)
+	order.ApplyOrderAPI(publicRoute, resource)
 
 	r.NoRoute(func(context *gin.Context) {
 		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service Missing / Not found."})
