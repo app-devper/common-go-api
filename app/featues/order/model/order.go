@@ -12,6 +12,4 @@ type Order struct {
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
 	UpdatedBy   string             `bson:"updatedBy" json:"updatedBy"`
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
-	Items       []OrderItem        `json:"items"`
-	Payment     Payment            `json:"payment"`
 }

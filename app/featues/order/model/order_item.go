@@ -2,7 +2,6 @@ package model
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"mgo-gin/app/featues/product/model"
 	"time"
 )
 
@@ -17,5 +16,4 @@ type OrderItem struct {
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
 	UpdatedBy   string             `bson:"updatedBy" json:"updatedBy"`
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
-	Product     model.Product      `json:"product"`
 }
