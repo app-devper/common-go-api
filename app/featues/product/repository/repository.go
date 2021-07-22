@@ -30,6 +30,8 @@ type IProduct interface {
 	CreateOne(form form.Product) (*model.Product, int, error)
 	RemoveOneById(id string) (*model.Product, int, error)
 	UpdateOneById(id string, form form.UpdateProduct) (*model.Product, int, error)
+	RemoveQuantityById(id string, quantity int) (*model.Product, int, error)
+
 	CreateLotOne(productId string, form form.Product) (*model.ProductLot, int, error)
 	GetLotAllByProductId(productId string) ([]model.ProductLot, int, error)
 	GetLotOneById(id string) (*model.ProductLot, int, error)
@@ -199,6 +201,30 @@ func (entity *productEntity) UpdateOneById(id string, form form.UpdateProduct) (
 	data.Quantity = form.Quantity
 	data.UpdatedDate = time.Now()
 
+	isReturnNewDoc := options.After
+	opts := &options.FindOneAndUpdateOptions{
+		ReturnDocument: &isReturnNewDoc,
+	}
+	err = entity.productRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	return data, http.StatusOK, nil
+}
+
+func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model.Product, int, error) {
+	logrus.Info("RemoveQuantityById")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	objId, _ := primitive.ObjectIDFromHex(id)
+	data, _, err := entity.GetOneById(id)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusNotFound, err
+	}
+	data.Quantity = data.Quantity - quantity
+	data.UpdatedDate = time.Now()
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
 		ReturnDocument: &isReturnNewDoc,
