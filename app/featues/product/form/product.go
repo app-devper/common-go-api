@@ -6,7 +6,7 @@ type Product struct {
 	Description  string  `json:"description"`
 	Price        float64 `json:"price" binding:"required"`
 	Unit         string  `json:"unit"`
-	Quantity     int     `json:"quantity" binding:"required"`
+	Quantity     int     `json:"quantity"`
 	SerialNumber string  `json:"serialNumber" binding:"required"`
 	LotNumber    string  `json:"lotNumber"`
 	ExpireDate   string  `json:"expireDate"`
