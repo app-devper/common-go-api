@@ -1,7 +1,17 @@
 package form
 
+import "time"
+
 type Order struct {
-	Items  []OrderItem `json:"items" binding:"required"`
-	Amount float32     `json:"amount" binding:"required"`
-	Type   string      `json:"type" binding:"required"`
+	Items   []OrderItem `json:"items" binding:"required"`
+	Amount  float64     `json:"amount" binding:"required"`
+	Type    string      `json:"type" binding:"required"`
+	Total   float64     `json:"total"`
+	Change  float64     `json:"change"`
+	Message string      `json:"message"`
+}
+
+type GetOrder struct {
+	StartDate time.Time `form:"startDate" binding:"required"`
+	EndDate   time.Time `form:"endDate" binding:"required"`
 }

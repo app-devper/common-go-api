@@ -60,9 +60,9 @@ func (entity *productEntity) CreateIndex() (string, error) {
 
 func (entity *productEntity) GetAll() ([]model.Product, int, error) {
 	logrus.Info("GetAll")
-	var products []model.Product
 	ctx, cancel := core.InitContext()
 	defer cancel()
+	var products []model.Product
 	cursor, err := entity.productRepo.Find(ctx, bson.M{})
 	if err != nil {
 		logrus.Error(err)

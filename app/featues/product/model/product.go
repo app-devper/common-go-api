@@ -10,7 +10,7 @@ type Product struct {
 	Name         string             `bson:"name" json:"name"`
 	NameEn       string             `bson:"nameEn" json:"nameEn"`
 	Description  string             `bson:"description" json:"description"`
-	Price        float32            `bson:"price" json:"price"`
+	Price        float64            `bson:"price" json:"price"`
 	Unit         string             `bson:"unit" json:"unit"`
 	Quantity     int                `bson:"quantity" json:"quantity"`
 	SerialNumber string             `bson:"serialNumber" json:"serialNumber"`
