@@ -46,6 +46,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 	var orderId = primitive.NewObjectID()
 	data := model.Order{
 		Id:          orderId,
+		Message:     form.Message,
 		Status:      constant.ACTIVE,
 		CreatedDate: time.Now(),
 		UpdatedDate: time.Now(),
