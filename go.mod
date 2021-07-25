@@ -8,7 +8,6 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-errors/errors v1.4.0 // indirect
 	github.com/joho/godotenv v1.3.0
-	github.com/line/line-bot-sdk-go/v7 v7.10.0 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.8.1
 	go.mongodb.org/mongo-driver v1.5.3

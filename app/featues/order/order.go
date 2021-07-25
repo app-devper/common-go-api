@@ -35,7 +35,7 @@ func createOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 			_, _, _ = productEntity.RemoveQuantityById(item.ProductId, item.Quantity)
 		}
 		if request.Message != "" {
-			core.PushMassage(request.Message)
+			_, _ = core.NotifyMassage(request.Message)
 		}
 		ctx.JSON(code, result)
 	}

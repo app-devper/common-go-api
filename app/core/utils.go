@@ -2,8 +2,8 @@ package core
 
 import (
 	"context"
-	"github.com/line/line-bot-sdk-go/v7/linebot"
 	"github.com/sirupsen/logrus"
+	"mgo-gin/app/core/notify"
 	"os"
 	"time"
 )
@@ -13,15 +13,13 @@ func InitContext() (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func PushMassage(massage string) {
-	secret := os.Getenv("LINE_SECRET")
-	accessToken := os.Getenv("LINE_ACCESS_TOKEN")
-	to := os.Getenv("LINE_USER_ID")
-	bot, err := linebot.New(secret, accessToken)
-	if bot != nil {
-		_, err = bot.PushMessage(to, linebot.NewTextMessage(massage)).Do()
-		if err != nil {
-			logrus.Error(err)
-		}
+func NotifyMassage(massage string) (*notify.Response, error) {
+	token := os.Getenv("LINE_TOKEN")
+	c := notify.NewClient()
+	res, err := c.NotifyMessage(context.Background(), token, massage)
+	if err != nil {
+		logrus.Error(err)
+		return res, err
 	}
+	return res, nil
 }
