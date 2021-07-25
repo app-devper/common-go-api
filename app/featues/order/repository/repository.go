@@ -28,6 +28,7 @@ type IOrder interface {
 	GetOrderRange(form form.GetOrder) ([]model.OrderSummary, int, error)
 	GetOrderById(id string) (*model.OrderDetail, int, error)
 	GetOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, int, error)
+	GetTotalOrderId(orderId string) (float64, error)
 	GetPaymentByOrderId(orderId string) (*model.Payment, int, error)
 }
 
@@ -195,7 +196,6 @@ func (entity orderEntity) GetOrderItemByOrderId(orderId string) ([]model.OrderIt
 }
 
 func (entity orderEntity) GetTotalOrderId(orderId string) (float64, error) {
-	logrus.Info("GetTotalOrderId")
 	ctx, cancel := core.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	defer cancel()
@@ -207,10 +207,8 @@ func (entity orderEntity) GetTotalOrderId(orderId string) (float64, error) {
 		},
 		{
 			"$group": bson.M{
-				"_id": "",
-				"total": bson.M{"$sum": bson.M{
-					"$multiply": []string{"$price", "$quantity"},
-				}},
+				"_id":   "",
+				"total": bson.M{"$sum": "$price"},
 			},
 		},
 	}
