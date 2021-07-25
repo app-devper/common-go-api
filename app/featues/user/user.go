@@ -49,7 +49,7 @@ func login(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		user, code, _ := userEntity.GetOneByUsername(userRequest.Username)
 		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "Wrong username or password"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong username or password"})
 			return
 		}
 		token := middlewares.GenerateJwtToken(*user)
@@ -123,7 +123,7 @@ func verifyRequest(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.Status == constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "user ref is active"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user ref is active"})
 			return
 		}
 		userRef, code, err = userEntity.UpdateVerification(userRequest)
@@ -148,11 +148,11 @@ func verifyCode(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.Status == constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "user ref is active"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user ref is active"})
 			return
 		}
 		if userRequest.RefId != userRef.RefId || userRequest.Code != userRef.Code {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"err": "Wrong code"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong code"})
 			return
 		}
 		userRef, code, err = userEntity.ActiveVerification(userRequest.UserRefId)
@@ -194,7 +194,7 @@ func setPassword(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.Objective != "SET_PASSWORD" {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": "Wrong objective"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong objective"})
 			return
 		}
 		user, code, err := userEntity.GetOneById(userRef.UserId.Hex())
@@ -391,7 +391,7 @@ func changePassword(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.OldPassword, user.Password) != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": "Wrong password"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong password"})
 			return
 		}
 		user, code, err = userEntity.ChangePassword(userId, userRequest)
