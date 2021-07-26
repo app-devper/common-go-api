@@ -55,6 +55,7 @@ func login(userEntity repository.IUser) gin.HandlerFunc {
 		token := middlewares.GenerateJwtToken(*user)
 		response := gin.H{
 			"accessToken": token,
+			"user":        user,
 		}
 		ctx.JSON(code, response)
 	}
