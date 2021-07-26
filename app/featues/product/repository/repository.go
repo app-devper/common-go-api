@@ -106,9 +106,11 @@ func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, 
 		data.Description = form.Description
 		data.SerialNumber = form.SerialNumber
 		data.Price = form.Price
+		data.CostPrice = form.CostPrice
 		data.Unit = form.Unit
 		data.Quantity = data.Quantity + form.Quantity
 		data.UpdatedDate = time.Now()
+
 		isReturnNewDoc := options.After
 		opts := &options.FindOneAndUpdateOptions{
 			ReturnDocument: &isReturnNewDoc,
@@ -133,6 +135,7 @@ func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, 
 		data.SerialNumber = form.SerialNumber
 		data.Unit = form.Unit
 		data.Price = form.Price
+		data.CostPrice = form.CostPrice
 		data.Quantity = form.Quantity
 		data.CreatedDate = time.Now()
 		data.UpdatedDate = time.Now()
@@ -197,6 +200,7 @@ func (entity *productEntity) UpdateOneById(id string, form form.UpdateProduct) (
 	data.NameEn = form.NameEn
 	data.Description = form.Description
 	data.Price = form.Price
+	data.CostPrice = form.CostPrice
 	data.Unit = form.Unit
 	data.Quantity = form.Quantity
 	data.UpdatedDate = time.Now()
@@ -247,6 +251,7 @@ func (entity *productEntity) CreateLotOne(productId string, form form.Product) (
 	data.LotNumber = form.LotNumber
 	data.ExpireDate = form.ExpireDate
 	data.Quantity = form.Quantity
+	data.CostPrice = form.CostPrice
 	data.CreatedDate = time.Now()
 	data.UpdatedDate = time.Now()
 	_, err := entity.lotRepo.InsertOne(ctx, data)
@@ -309,6 +314,7 @@ func (entity *productEntity) UpdateLotOneById(id string, form form.ProductLot) (
 	data.LotNumber = form.LotNumber
 	data.ExpireDate = form.ExpireDate
 	data.Quantity = form.Quantity
+	data.CostPrice = form.CostPrice
 	data.UpdatedDate = time.Now()
 
 	isReturnNewDoc := options.After

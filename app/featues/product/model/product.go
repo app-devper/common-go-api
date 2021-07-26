@@ -11,6 +11,7 @@ type Product struct {
 	NameEn       string             `bson:"nameEn" json:"nameEn"`
 	Description  string             `bson:"description" json:"description"`
 	Price        float64            `bson:"price" json:"price"`
+	CostPrice    float64            `bson:"costPrice" json:"costPrice"`
 	Unit         string             `bson:"unit" json:"unit"`
 	Quantity     int                `bson:"quantity" json:"quantity"`
 	SerialNumber string             `bson:"serialNumber" json:"serialNumber"`
@@ -24,6 +25,7 @@ type ProductLot struct {
 	Id          primitive.ObjectID `bson:"_id" json:"id"`
 	ProductId   primitive.ObjectID `bson:"productId" json:"productId"`
 	LotNumber   string             `bson:"lotNumber" json:"lotNumber"`
+	CostPrice   float64            `bson:"costPrice" json:"costPrice"`
 	Quantity    int                `bson:"quantity" json:"quantity"`
 	ExpireDate  string             `bson:"expireDate" json:"expireDate"`
 	CreatedBy   string             `bson:"createdBy" json:"createdBy"`
