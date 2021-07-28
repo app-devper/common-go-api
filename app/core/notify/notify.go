@@ -25,11 +25,7 @@ func NewClient() *Client {
 	return &Client{HTTPClient: http.DefaultClient}
 }
 
-var (
-	ErrNotifyInvalidAccessToken = errors.New("invalid access token")
-)
-
-// NotifyMessage notify text message and image by url
+// NotifyMessage notify text message
 func (c *Client) NotifyMessage(ctx context.Context, token, message string) (*Response, error) {
 	body, contentType, err := c.requestBody(message)
 	if err != nil {
@@ -57,7 +53,7 @@ func (c *Client) notify(ctx context.Context, token string, body io.Reader, conte
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nResp, ErrNotifyInvalidAccessToken
+		return nResp, errors.New("invalid access token")
 	}
 
 	if resp.StatusCode != http.StatusOK {

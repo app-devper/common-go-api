@@ -27,9 +27,11 @@ type IOrder interface {
 	CreateOrder(form form.Order) (*model.Order, int, error)
 	GetOrderRange(form form.GetOrder) ([]model.OrderSummary, int, error)
 	GetOrderById(id string) (*model.OrderDetail, int, error)
+	RemoveOrderById(id string) (*model.OrderDetail, int, error)
 	GetOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, int, error)
 	GetTotalOrderId(orderId string) (float64, error)
 	GetPaymentByOrderId(orderId string) (*model.Payment, int, error)
+	RemovePaymentByOrderId(orderId string) (*model.Payment, int, error)
 }
 
 func NewOrderEntity(resource *db.Resource) IOrder {
@@ -195,6 +197,24 @@ func (entity orderEntity) GetOrderItemByOrderId(orderId string) ([]model.OrderIt
 	return items, http.StatusOK, nil
 }
 
+func (entity orderEntity) RemoveOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, int, error) {
+	logrus.Info("RemoveOrderItemByOrderId")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	objId, _ := primitive.ObjectIDFromHex(orderId)
+	items, _, err := entity.GetOrderItemByOrderId(orderId)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	_, err = entity.orderItemRepo.DeleteMany(ctx, bson.M{"orderId": objId})
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	return items, http.StatusOK, nil
+}
+
 func (entity orderEntity) GetTotalOrderId(orderId string) (float64, error) {
 	ctx, cancel := core.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
@@ -236,5 +256,48 @@ func (entity orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, i
 		logrus.Error(err)
 		return nil, http.StatusBadRequest, err
 	}
+	return &data, http.StatusOK, nil
+}
+
+func (entity orderEntity) RemovePaymentByOrderId(orderId string) (*model.Payment, int, error) {
+	logrus.Info("RemovePaymentByOrderId")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	var data model.Payment
+	objId, _ := primitive.ObjectIDFromHex(orderId)
+	err := entity.paymentRepo.FindOne(ctx, bson.M{"orderId": objId}).Decode(&data)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	_, err = entity.paymentRepo.DeleteMany(ctx, bson.M{"orderId": objId})
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	return &data, http.StatusOK, nil
+}
+
+func (entity orderEntity) RemoveOrderById(id string) (*model.OrderDetail, int, error) {
+	logrus.Info("RemoveOrderById")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	var data model.OrderDetail
+	objId, _ := primitive.ObjectIDFromHex(id)
+	err := entity.orderRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	_, err = entity.orderRepo.DeleteOne(ctx, bson.M{"_id": data.Id})
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	data.Total, _ = entity.GetTotalOrderId(id)
+	payment, _, _ := entity.RemovePaymentByOrderId(id)
+	data.Payment = *payment
+	items, _, _ := entity.RemoveOrderItemByOrderId(id)
+	data.Items = items
 	return &data, http.StatusOK, nil
 }

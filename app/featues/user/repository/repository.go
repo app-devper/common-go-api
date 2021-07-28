@@ -8,10 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"mgo-gin/app/core"
+	bcrypt2 "mgo-gin/app/core/bcrypt"
 	"mgo-gin/app/featues/user/form"
 	"mgo-gin/app/featues/user/model"
 	"mgo-gin/db"
-	"mgo-gin/utils/bcrypt"
 	"mgo-gin/utils/constant"
 	"net/http"
 	"time"
@@ -121,7 +121,7 @@ func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 		FirstName:   form.FirstName,
 		LastName:    form.LastName,
 		Username:    form.Username,
-		Password:    bcrypt.HashPassword(form.Password),
+		Password:    bcrypt2.HashPassword(form.Password),
 		Role:        constant.USER,
 		Status:      constant.ACTIVE,
 		CreatedBy:   createdBy,
@@ -183,7 +183,7 @@ func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User
 	user.FirstName = form.FirstName
 	user.LastName = form.LastName
 	user.Username = form.Username
-	user.Password = bcrypt.HashPassword(form.Password)
+	user.Password = bcrypt2.HashPassword(form.Password)
 	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
 	user.UpdatedDate = time.Now()
 
@@ -209,7 +209,7 @@ func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
-	user.Password = bcrypt.HashPassword(form.NewPassword)
+	user.Password = bcrypt2.HashPassword(form.NewPassword)
 	user.UpdatedBy = objId
 	user.UpdatedDate = time.Now()
 	isReturnNewDoc := options.After
@@ -234,7 +234,7 @@ func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
-	user.Password = bcrypt.HashPassword(form.Password)
+	user.Password = bcrypt2.HashPassword(form.Password)
 	user.UpdatedBy = objId
 	user.UpdatedDate = time.Now()
 	isReturnNewDoc := options.After
@@ -284,8 +284,8 @@ func (entity *userEntity) UpdateVerification(form form.VerifyRequest) (*model.Us
 	}
 	user.Channel = form.Channel
 	user.ChannelInfo = form.ChannelInfo
-	user.Code, _ = bcrypt.GenerateCode(6)
-	user.RefId, _ = bcrypt.GenerateRefId(4)
+	user.Code, _ = bcrypt2.GenerateCode(6)
+	user.RefId, _ = bcrypt2.GenerateRefId(4)
 	user.ExpireDate = time.Now().Add(5 * time.Minute)
 	user.ValidPeriod = 5
 	isReturnNewDoc := options.After

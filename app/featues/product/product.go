@@ -5,6 +5,7 @@ import (
 	"mgo-gin/app/featues/product/form"
 	"mgo-gin/app/featues/product/repository"
 	"mgo-gin/db"
+	"mgo-gin/middlewares"
 	"net/http"
 )
 
@@ -14,9 +15,9 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 
 	productRoute := app.Group("product")
 	productRoute.GET("", getAll(productEntity))
-	productRoute.POST("", createProduct(productEntity))
+	productRoute.POST("", middlewares.RequireAuthenticated(), createProduct(productEntity))
 	productRoute.GET("/:productId", getProductById(productEntity))
-	productRoute.PUT("/:productId", updateProductById(productEntity))
+	productRoute.PUT("/:productId", middlewares.RequireAuthenticated(), updateProductById(productEntity))
 	productRoute.GET("/serial-number/:serialNumber", getProductBySerialNumber(productEntity))
 	productRoute.GET("/:productId/lot", getLotAllByProductId(productEntity))
 	productRoute.PUT("/lot/:lotId", updateLotById(productEntity))

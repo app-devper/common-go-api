@@ -6,12 +6,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"mgo-gin/app/featues/user/model"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
 
 // Create the JWT key used to create the signature
-var jwtKey = []byte("uit_secret_key")
+var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 type Claims struct {
 	UserId string `json:"userId"`
@@ -74,6 +75,10 @@ func RequireAuthenticated() gin.HandlerFunc {
 			return
 		}
 		jwtToken := strings.Split(token, "Bearer ")
+		if len(jwtToken) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+			return
+		}
 		// Initialize a new instance of `Claims`
 		claims := &Claims{}
 		tkn, err := jwt.ParseWithClaims(jwtToken[1], claims, func(token *jwt.Token) (interface{}, error) {

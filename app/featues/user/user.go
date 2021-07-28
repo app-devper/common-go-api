@@ -2,11 +2,11 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"mgo-gin/app/core/bcrypt"
 	"mgo-gin/app/featues/user/form"
 	"mgo-gin/app/featues/user/repository"
 	"mgo-gin/db"
 	"mgo-gin/middlewares"
-	"mgo-gin/utils/bcrypt"
 	"mgo-gin/utils/constant"
 	"net/http"
 )
@@ -18,11 +18,11 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	authRoute := app.Group("auth")
 	authRoute.POST("/login", login(userEntity))
 	authRoute.POST("/sign-up", signUp(userEntity))
-
 	authRoute.POST("/verification/user", verifyUser(userEntity))
 	authRoute.POST("/verification/request", verifyRequest(userEntity))
 	authRoute.POST("/verification/code", verifyCode(userEntity))
 	authRoute.GET("/verification/info", middlewares.RequireActionToken(), verifyActionToken(userEntity))
+	authRoute.POST("/set-password", middlewares.RequireActionToken(), setPassword(userEntity))
 
 	userRoute := app.Group("/user")
 	userRoute.Use(middlewares.RequireAuthenticated())
@@ -30,7 +30,6 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	userRoute.PUT("/info", updateUserInfo(userEntity))
 	userRoute.PUT("/change-password", changePassword(userEntity))
 	userRoute.GET("/keep-alive", keepAlive(userEntity))
-	authRoute.POST("/set-password", middlewares.RequireActionToken(), setPassword(userEntity))
 
 	// ADMIN
 	userRoute.GET("/:id", middlewares.RequireAuthorization(constant.ADMIN), getUserById(userEntity))
