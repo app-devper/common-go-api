@@ -18,6 +18,7 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 	productRoute.POST("", middlewares.RequireAuthenticated(), createProduct(productEntity))
 	productRoute.GET("/:productId", getProductById(productEntity))
 	productRoute.PUT("/:productId", middlewares.RequireAuthenticated(), updateProductById(productEntity))
+	productRoute.DELETE("/:productId", middlewares.RequireAuthenticated(), deleteProductById(productEntity))
 	productRoute.GET("/serial-number/:serialNumber", getProductBySerialNumber(productEntity))
 	productRoute.GET("/:productId/lot", getLotAllByProductId(productEntity))
 	productRoute.PUT("/lot/:lotId", updateLotById(productEntity))
@@ -59,12 +60,24 @@ func updateProductById(productEntity repository.IProduct) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		device, code, err := productEntity.UpdateOneById(id, request)
+		result, code, err := productEntity.UpdateOneById(id, request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		ctx.JSON(code, device)
+		ctx.JSON(code, result)
+	}
+}
+
+func deleteProductById(productEntity repository.IProduct) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("productId")
+		result, code, err := productEntity.RemoveOneById(id)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, result)
 	}
 }
 

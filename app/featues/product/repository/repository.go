@@ -184,6 +184,7 @@ func (entity *productEntity) RemoveOneById(id string) (*model.Product, int, erro
 		logrus.Error(err)
 		return nil, http.StatusBadRequest, err
 	}
+	_, _ = entity.lotRepo.DeleteMany(ctx, bson.M{"productId": objId})
 	return &data, http.StatusOK, nil
 }
 

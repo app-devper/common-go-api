@@ -18,7 +18,9 @@ func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
 	orderRoute := app.Group("order")
 	orderRoute.POST("", createOrder(orderEntity, productEntity))
 	orderRoute.GET("", getOrderRange(orderEntity))
+	orderRoute.GET("total", updateTotal(orderEntity))
 	orderRoute.GET("/:id", getOrderById(orderEntity))
+	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
 	orderRoute.DELETE("/:id", middlewares.RequireAuthenticated(), deleteOrder(orderEntity, productEntity))
 }
 
@@ -63,10 +65,33 @@ func getOrderRange(orderEntity repository.IOrder) gin.HandlerFunc {
 	}
 }
 
+func updateTotal(orderEntity repository.IOrder) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		result, code, err := orderEntity.UpdateTotal()
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, result)
+	}
+}
+
 func getOrderById(orderEntity repository.IOrder) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("id")
 		result, code, err := orderEntity.GetOrderById(id)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, result)
+	}
+}
+
+func getOrderItemByProductId(orderEntity repository.IOrder) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		productId := ctx.Param("productId")
+		result, code, err := orderEntity.GetOrderItemByProductId(productId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
