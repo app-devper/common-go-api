@@ -17,7 +17,7 @@ type Routes struct {
 }
 
 func (app Routes) StartGin() {
-	r := gin.Default()
+	r := gin.New()
 
 	r.Use(gin.Logger())
 	r.Use(middlewares.NewRecovery())
