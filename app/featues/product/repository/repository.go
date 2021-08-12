@@ -24,19 +24,19 @@ type productEntity struct {
 
 type IProduct interface {
 	CreateIndex() (string, error)
-	GetAll() ([]model.Product, int, error)
-	GetOneBySerialNumber(serialNumber string) (*model.Product, int, error)
-	GetOneById(id string) (*model.Product, int, error)
-	CreateOne(form form.Product) (*model.Product, int, error)
-	RemoveOneById(id string) (*model.Product, int, error)
-	UpdateOneById(id string, form form.UpdateProduct) (*model.Product, int, error)
+	GetProductAll() ([]model.Product, int, error)
+	GetProductBySerialNumber(serialNumber string) (*model.Product, int, error)
+	GetProductById(id string) (*model.Product, int, error)
+	CreateProduct(form form.Product) (*model.Product, int, error)
+	RemoveProductById(id string) (*model.Product, int, error)
+	UpdateProductById(id string, form form.UpdateProduct) (*model.Product, int, error)
 	RemoveQuantityById(id string, quantity int) (*model.Product, int, error)
 	AddQuantityById(id string, quantity int) (*model.Product, int, error)
 
-	CreateLotOne(productId string, form form.Product) (*model.ProductLot, int, error)
+	CreateLot(productId string, form form.Product) (*model.ProductLot, int, error)
 	GetLotAllByProductId(productId string) ([]model.ProductLot, int, error)
-	GetLotOneById(id string) (*model.ProductLot, int, error)
-	UpdateLotOneById(id string, form form.ProductLot) (*model.ProductLot, int, error)
+	GetLotById(id string) (*model.ProductLot, int, error)
+	UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, int, error)
 }
 
 func NewProductEntity(resource *db.Resource) IProduct {
@@ -59,8 +59,8 @@ func (entity *productEntity) CreateIndex() (string, error) {
 	return ind, err
 }
 
-func (entity *productEntity) GetAll() ([]model.Product, int, error) {
-	logrus.Info("GetAll")
+func (entity *productEntity) GetProductAll() ([]model.Product, int, error) {
+	logrus.Info("GetProductAll")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var products []model.Product
@@ -83,8 +83,8 @@ func (entity *productEntity) GetAll() ([]model.Product, int, error) {
 	return products, http.StatusOK, nil
 }
 
-func (entity *productEntity) GetOneBySerialNumber(serialNumber string) (*model.Product, int, error) {
-	logrus.Info("GetOneBySerialNumber")
+func (entity *productEntity) GetProductBySerialNumber(serialNumber string) (*model.Product, int, error) {
+	logrus.Info("GetProductBySerialNumber")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var data model.Product
@@ -96,11 +96,11 @@ func (entity *productEntity) GetOneBySerialNumber(serialNumber string) (*model.P
 	return &data, http.StatusOK, nil
 }
 
-func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, error) {
-	logrus.Info("CreateOne")
+func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, int, error) {
+	logrus.Info("CreateProduct")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	data, _, _ := entity.GetOneBySerialNumber(form.SerialNumber)
+	data, _, _ := entity.GetProductBySerialNumber(form.SerialNumber)
 	if data != nil {
 		data.Name = form.Name
 		data.NameEn = form.NameEn
@@ -121,7 +121,7 @@ func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, 
 			logrus.Error(err)
 			return nil, http.StatusBadRequest, err
 		}
-		_, _, err = entity.CreateLotOne(data.Id.Hex(), form)
+		_, _, err = entity.CreateLot(data.Id.Hex(), form)
 		if err != nil {
 			logrus.Error(err)
 			return nil, http.StatusBadRequest, err
@@ -145,7 +145,7 @@ func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, 
 			logrus.Error(err)
 			return nil, http.StatusBadRequest, err
 		}
-		_, _, err = entity.CreateLotOne(data.Id.Hex(), form)
+		_, _, err = entity.CreateLot(data.Id.Hex(), form)
 		if err != nil {
 			logrus.Error(err)
 			return nil, http.StatusBadRequest, err
@@ -154,8 +154,8 @@ func (entity *productEntity) CreateOne(form form.Product) (*model.Product, int, 
 	}
 }
 
-func (entity *productEntity) GetOneById(id string) (*model.Product, int, error) {
-	logrus.Info("GetOneById")
+func (entity *productEntity) GetProductById(id string) (*model.Product, int, error) {
+	logrus.Info("GetProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var data model.Product
@@ -168,8 +168,8 @@ func (entity *productEntity) GetOneById(id string) (*model.Product, int, error) 
 	return &data, http.StatusOK, nil
 }
 
-func (entity *productEntity) RemoveOneById(id string) (*model.Product, int, error) {
-	logrus.Info("RemoveOneById")
+func (entity *productEntity) RemoveProductById(id string) (*model.Product, int, error) {
+	logrus.Info("RemoveProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var data model.Product
@@ -188,12 +188,12 @@ func (entity *productEntity) RemoveOneById(id string) (*model.Product, int, erro
 	return &data, http.StatusOK, nil
 }
 
-func (entity *productEntity) UpdateOneById(id string, form form.UpdateProduct) (*model.Product, int, error) {
-	logrus.Info("UpdateOneById")
+func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduct) (*model.Product, int, error) {
+	logrus.Info("UpdateProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetOneById(id)
+	data, _, err := entity.GetProductById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
@@ -224,7 +224,7 @@ func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetOneById(id)
+	data, _, err := entity.GetProductById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
@@ -248,7 +248,7 @@ func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Pr
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetOneById(id)
+	data, _, err := entity.GetProductById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
@@ -267,8 +267,8 @@ func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Pr
 	return data, http.StatusOK, nil
 }
 
-func (entity *productEntity) CreateLotOne(productId string, form form.Product) (*model.ProductLot, int, error) {
-	logrus.Info("CreateLotOne")
+func (entity *productEntity) CreateLot(productId string, form form.Product) (*model.ProductLot, int, error) {
+	logrus.Info("CreateLot")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	data := model.ProductLot{}
@@ -313,8 +313,8 @@ func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.Pro
 	return productLots, http.StatusOK, nil
 }
 
-func (entity *productEntity) GetLotOneById(id string) (*model.ProductLot, int, error) {
-	logrus.Info("GetLotOneById")
+func (entity *productEntity) GetLotById(id string) (*model.ProductLot, int, error) {
+	logrus.Info("GetLotById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var data model.ProductLot
@@ -327,12 +327,12 @@ func (entity *productEntity) GetLotOneById(id string) (*model.ProductLot, int, e
 	return &data, http.StatusOK, nil
 }
 
-func (entity *productEntity) UpdateLotOneById(id string, form form.ProductLot) (*model.ProductLot, int, error) {
-	logrus.Info("UpdateLotOneById")
+func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, int, error) {
+	logrus.Info("UpdateLotById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetLotOneById(id)
+	data, _, err := entity.GetLotById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err

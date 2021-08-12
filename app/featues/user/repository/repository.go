@@ -27,11 +27,11 @@ type userEntity struct {
 
 type IUser interface {
 	CreateIndex() (string, error)
-	GetAll() ([]model.User, int, error)
-	GetOneByUsername(username string) (*model.User, int, error)
-	GetOneById(id string) (*model.User, int, error)
-	CreateOne(form form.User) (*model.User, int, error)
-	RemoveOneById(id string) (*model.User, int, error)
+	GetUserAll() ([]model.User, int, error)
+	GetUserByUsername(username string) (*model.User, int, error)
+	GetUserById(id string) (*model.User, int, error)
+	CreateUser(form form.User) (*model.User, int, error)
+	RemoveUserById(id string) (*model.User, int, error)
 	UpdateUserById(id string, form form.User) (*model.User, int, error)
 	ChangePassword(id string, form form.ChangePassword) (*model.User, int, error)
 
@@ -63,8 +63,8 @@ func (entity *userEntity) CreateIndex() (string, error) {
 	return ind, err
 }
 
-func (entity *userEntity) GetAll() ([]model.User, int, error) {
-	logrus.Info("GetAll")
+func (entity *userEntity) GetUserAll() ([]model.User, int, error) {
+	logrus.Info("GetUserAll")
 	var usersList []model.User
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -87,8 +87,8 @@ func (entity *userEntity) GetAll() ([]model.User, int, error) {
 	return usersList, http.StatusOK, nil
 }
 
-func (entity *userEntity) GetOneByUsername(username string) (*model.User, int, error) {
-	logrus.Info("GetOneByUsername")
+func (entity *userEntity) GetUserByUsername(username string) (*model.User, int, error) {
+	logrus.Info("GetUserByUsername")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var user model.User
@@ -100,11 +100,11 @@ func (entity *userEntity) GetOneByUsername(username string) (*model.User, int, e
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
-	logrus.Info("CreateOne")
+func (entity *userEntity) CreateUser(form form.User) (*model.User, int, error) {
+	logrus.Info("CreateUser")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	found, _, _ := entity.GetOneByUsername(form.Username)
+	found, _, _ := entity.GetUserByUsername(form.Username)
 	if found != nil {
 		err := errors.New("username is taken")
 		logrus.Error(err)
@@ -137,8 +137,8 @@ func (entity *userEntity) CreateOne(form form.User) (*model.User, int, error) {
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) GetOneById(id string) (*model.User, int, error) {
-	logrus.Info("GetOneById")
+func (entity *userEntity) GetUserById(id string) (*model.User, int, error) {
+	logrus.Info("GetUserById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var user model.User
@@ -151,8 +151,8 @@ func (entity *userEntity) GetOneById(id string) (*model.User, int, error) {
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) RemoveOneById(id string) (*model.User, int, error) {
-	logrus.Info("RemoveOneById")
+func (entity *userEntity) RemoveUserById(id string) (*model.User, int, error) {
+	logrus.Info("RemoveUserById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var user model.User
@@ -175,7 +175,7 @@ func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	user, _, err := entity.GetOneById(id)
+	user, _, err := entity.GetUserById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
@@ -204,7 +204,7 @@ func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	user, _, err := entity.GetOneById(id)
+	user, _, err := entity.GetUserById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
@@ -229,7 +229,7 @@ func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	user, _, err := entity.GetOneById(id)
+	user, _, err := entity.GetUserById(id)
 	if err != nil {
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err

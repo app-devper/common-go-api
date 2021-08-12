@@ -27,7 +27,7 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 
 func getAll(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		result, code, err := productEntity.GetAll()
+		result, code, err := productEntity.GetProductAll()
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -43,7 +43,7 @@ func createProduct(productEntity repository.IProduct) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		device, code, err := productEntity.CreateOne(request)
+		device, code, err := productEntity.CreateProduct(request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -60,7 +60,7 @@ func updateProductById(productEntity repository.IProduct) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		result, code, err := productEntity.UpdateOneById(id, request)
+		result, code, err := productEntity.UpdateProductById(id, request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -72,7 +72,7 @@ func updateProductById(productEntity repository.IProduct) gin.HandlerFunc {
 func deleteProductById(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("productId")
-		result, code, err := productEntity.RemoveOneById(id)
+		result, code, err := productEntity.RemoveProductById(id)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -84,7 +84,7 @@ func deleteProductById(productEntity repository.IProduct) gin.HandlerFunc {
 func getProductBySerialNumber(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		serialNumber := ctx.Param("serialNumber")
-		result, code, err := productEntity.GetOneBySerialNumber(serialNumber)
+		result, code, err := productEntity.GetProductBySerialNumber(serialNumber)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -96,7 +96,7 @@ func getProductBySerialNumber(productEntity repository.IProduct) gin.HandlerFunc
 func getProductById(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("productId")
-		result, code, err := productEntity.GetOneById(id)
+		result, code, err := productEntity.GetProductById(id)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -120,7 +120,7 @@ func getLotAllByProductId(productEntity repository.IProduct) gin.HandlerFunc {
 func getLotById(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("lotId")
-		result, code, err := productEntity.GetLotOneById(id)
+		result, code, err := productEntity.GetLotById(id)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
@@ -137,7 +137,7 @@ func updateLotById(productEntity repository.IProduct) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		device, code, err := productEntity.UpdateLotOneById(id, request)
+		device, code, err := productEntity.UpdateLotById(id, request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
