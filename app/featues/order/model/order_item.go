@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"mgo-gin/app/featues/product/model"
 	"time"
@@ -31,4 +32,8 @@ type OrderItemDetail struct {
 	UpdatedBy   string             `bson:"updatedBy" json:"updatedBy"`
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 	Product     model.Product      `bson:"product" json:"product"`
+}
+
+func (item OrderItemDetail) GetMessage() string {
+	return fmt.Sprintf("%s จำนวน %d %s ราคา %.2f บาท", item.Product.Name, item.Quantity, item.Product.Unit, item.Price)
 }

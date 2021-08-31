@@ -1,6 +1,7 @@
 package order
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"mgo-gin/app/core"
 	"mgo-gin/app/featues/order/form"
@@ -21,6 +22,7 @@ func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
 	orderRoute.GET("total", updateTotal(orderEntity))
 	orderRoute.GET("/:id", getOrderById(orderEntity))
 	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
+	orderRoute.DELETE("/:id/product/:productId", middlewares.RequireAuthenticated(), deleteProductInOrder(orderEntity, productEntity))
 	orderRoute.DELETE("/:id", middlewares.RequireAuthenticated(), deleteOrder(orderEntity, productEntity))
 }
 
@@ -108,15 +110,42 @@ func deleteOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
+
+		var message = ""
+		var no = 1
 		for _, item := range result.Items {
 			_, _, _ = productEntity.AddQuantityById(item.ProductId.Hex(), item.Quantity)
+			message += fmt.Sprintf("%d. %s\n", no, item.GetMessage())
+			no += 1
 		}
-		if result.Message != "" {
-			location, _ := time.LoadLocation("Asia/Bangkok")
-			format := "02 Jan 2006 15:04"
-			date := result.CreatedDate.In(location).Format(format)
-			_, _ = core.NotifyMassage("ยกเลิกรายการวันที่ " + date + "\n\n" + result.Message)
+		message += fmt.Sprintf("\nรวม %.2f บาท", result.Total)
+
+		location, _ := time.LoadLocation("Asia/Bangkok")
+		format := "02 Jan 2006 15:04"
+		date := result.CreatedDate.In(location).Format(format)
+		_, _ = core.NotifyMassage("ยกเลิกรายการวันที่ " + date + "\n\n" + message)
+
+		ctx.JSON(code, result)
+	}
+}
+
+func deleteProductInOrder(orderEntity repository.IOrder, productEntity repository2.IProduct) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		productId := ctx.Param("productId")
+		result, code, err := orderEntity.RemoveProductByOrderProductId(id, productId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
 		}
+
+		_, _, _ = productEntity.AddQuantityById(productId, result.Quantity)
+
+		location, _ := time.LoadLocation("Asia/Bangkok")
+		format := "02 Jan 2006 15:04"
+		date := result.CreatedDate.In(location).Format(format)
+		_, _ = core.NotifyMassage("ยกเลิกสินค้ารายการวันที่ " + date + "\n\n1. " + result.GetMessage())
+
 		ctx.JSON(code, result)
 	}
 }
