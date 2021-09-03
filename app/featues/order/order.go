@@ -21,6 +21,7 @@ func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
 	orderRoute.GET("", getOrderRange(orderEntity))
 	orderRoute.GET("total", updateTotal(orderEntity))
 	orderRoute.GET("/:id", getOrderById(orderEntity))
+	orderRoute.GET("/:id/total-cost", updateTotalCost(orderEntity, productEntity))
 	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
 	orderRoute.DELETE("/:id/product/:productId", middlewares.RequireAuthenticated(), deleteProductInOrder(orderEntity, productEntity))
 	orderRoute.DELETE("/:id", middlewares.RequireAuthenticated(), deleteOrder(orderEntity, productEntity))
@@ -82,10 +83,35 @@ func updateTotal(orderEntity repository.IOrder) gin.HandlerFunc {
 	}
 }
 
+func updateTotalCost(orderEntity repository.IOrder, productEntity repository2.IProduct) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		order, code, err := orderEntity.GetOrderDetailById(id)
+		totalCost := 0.0
+		for _, item := range order.Items {
+			orderItem := form.OrderItem{
+				CostPrice: productEntity.GetTotalCostPrice(item.ProductId.Hex(), item.Quantity),
+				Quantity:  item.Quantity,
+				Price:     item.Price,
+				Discount:  item.Discount,
+				ProductId: item.ProductId.Hex(),
+			}
+			_, _, _ = orderEntity.UpdateOrderItemById(item.Id.Hex(), orderItem)
+			totalCost += orderItem.CostPrice
+		}
+		result, code, err := orderEntity.UpdateTotalCostOrderById(id, totalCost)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, result)
+	}
+}
+
 func getOrderById(orderEntity repository.IOrder) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("id")
-		result, code, err := orderEntity.GetOrderById(id)
+		result, code, err := orderEntity.GetOrderDetailById(id)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
