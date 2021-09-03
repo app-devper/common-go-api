@@ -32,6 +32,7 @@ type IProduct interface {
 	UpdateProductById(id string, form form.UpdateProduct) (*model.Product, int, error)
 	RemoveQuantityById(id string, quantity int) (*model.Product, int, error)
 	AddQuantityById(id string, quantity int) (*model.Product, int, error)
+	GetTotalCostPrice(id string, quantity int) float64
 
 	CreateLot(productId string, form form.Product) (*model.ProductLot, int, error)
 	GetLotAllByProductId(productId string) ([]model.ProductLot, int, error)
@@ -224,6 +225,7 @@ func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
+
 	data, _, err := entity.GetProductById(id)
 	if err != nil {
 		logrus.Error(err)
@@ -231,6 +233,7 @@ func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model
 	}
 	data.Quantity = data.Quantity - quantity
 	data.UpdatedDate = time.Now()
+
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
 		ReturnDocument: &isReturnNewDoc,
@@ -265,6 +268,16 @@ func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Pr
 		return nil, http.StatusBadRequest, err
 	}
 	return data, http.StatusOK, nil
+}
+
+func (entity *productEntity) GetTotalCostPrice(id string, quantity int) float64 {
+	logrus.Info("GetTotalCostPrice")
+	data, _, err := entity.GetProductById(id)
+	if err != nil {
+		logrus.Error(err)
+		return 0
+	}
+	return data.CostPrice * float64(quantity)
 }
 
 func (entity *productEntity) CreateLot(productId string, form form.Product) (*model.ProductLot, int, error) {
@@ -337,6 +350,7 @@ func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*mo
 		logrus.Error(err)
 		return nil, http.StatusNotFound, err
 	}
+
 	data.LotNumber = form.LotNumber
 	data.ExpireDate = form.ExpireDate
 	data.Quantity = form.Quantity

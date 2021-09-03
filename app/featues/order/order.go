@@ -33,6 +33,10 @@ func createOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		for index, item := range request.Items {
+			request.Items[index].CostPrice = productEntity.GetTotalCostPrice(item.ProductId, item.Quantity)
+			request.TotalCost += item.CostPrice
+		}
 		result, code, err := orderEntity.CreateOrder(request)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})

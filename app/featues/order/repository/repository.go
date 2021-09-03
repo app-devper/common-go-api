@@ -34,7 +34,8 @@ type IOrder interface {
 	GetOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error)
 	RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error)
 	GetOrderItemByProductId(productId string) ([]model.OrderItem, int, error)
-	GetTotalOrderId(orderId string) (float64, error)
+	GetTotalOrderId(orderId string) float64
+	GetTotalCostOrderId(orderId string) float64
 	UpdateTotalByOrderId(orderId string) (*model.Order, int, error)
 	GetPaymentByOrderId(orderId string) (*model.Payment, int, error)
 	RemovePaymentByOrderId(orderId string) (*model.Payment, int, error)
@@ -59,6 +60,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 		Message:     form.Message,
 		Status:      constant.ACTIVE,
 		Total:       form.Total,
+		TotalCost:   form.TotalCost,
 		CreatedDate: time.Now(),
 		UpdatedDate: time.Now(),
 	}
@@ -78,6 +80,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 			ProductId:   productId,
 			Quantity:    formItem.Quantity,
 			Price:       formItem.Price,
+			CostPrice:   formItem.CostPrice,
 			Discount:    formItem.Discount,
 			CreatedDate: time.Now(),
 			UpdatedDate: time.Now(),
@@ -154,7 +157,8 @@ func (entity orderEntity) UpdateTotal() ([]model.Order, int, error) {
 			logrus.Error(err)
 		}
 		if data.Total == 0 {
-			data.Total, _ = entity.GetTotalOrderId(data.Id.Hex())
+			data.Total = entity.GetTotalOrderId(data.Id.Hex())
+			data.TotalCost = entity.GetTotalCostOrderId(data.Id.Hex())
 			isReturnNewDoc := options.After
 			opts := &options.FindOneAndUpdateOptions{
 				ReturnDocument: &isReturnNewDoc,
@@ -345,7 +349,8 @@ func (entity orderEntity) RemoveOrderItemByOrderProductId(orderId string, produc
 	return item, http.StatusOK, nil
 }
 
-func (entity orderEntity) GetTotalOrderId(orderId string) (float64, error) {
+func (entity orderEntity) GetTotalOrderId(orderId string) float64 {
+	logrus.Info("GetTotalOrderId")
 	ctx, cancel := core.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	defer cancel()
@@ -366,13 +371,44 @@ func (entity orderEntity) GetTotalOrderId(orderId string) (float64, error) {
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, pipeline)
 	if err != nil {
 		logrus.Error(err)
-		return 0, err
+		return 0
 	}
 	err = cursor.All(ctx, &result)
 	if result == nil {
-		return 0, err
+		return 0
 	}
-	return result[0]["total"].(float64), nil
+	return result[0]["total"].(float64)
+}
+
+func (entity orderEntity) GetTotalCostOrderId(orderId string) float64 {
+	logrus.Info("GetTotalCostOrderId")
+	ctx, cancel := core.InitContext()
+	objId, _ := primitive.ObjectIDFromHex(orderId)
+	defer cancel()
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"orderId": objId,
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":       "",
+				"totalCost": bson.M{"$sum": "$costPrice"},
+			},
+		},
+	}
+	var result []bson.M
+	cursor, err := entity.orderItemRepo.Aggregate(ctx, pipeline)
+	if err != nil {
+		logrus.Error(err)
+		return 0
+	}
+	err = cursor.All(ctx, &result)
+	if result == nil {
+		return 0
+	}
+	return result[0]["totalCost"].(float64)
 }
 
 func (entity orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, int, error) {
@@ -457,7 +493,8 @@ func (entity orderEntity) UpdateTotalByOrderId(orderId string) (*model.Order, in
 		logrus.Error(err)
 		return nil, http.StatusBadRequest, err
 	}
-	data.Total, _ = entity.GetTotalOrderId(orderId)
+	data.Total = entity.GetTotalOrderId(orderId)
+	data.TotalCost = entity.GetTotalCostOrderId(orderId)
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
 		ReturnDocument: &isReturnNewDoc,

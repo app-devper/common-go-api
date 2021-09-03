@@ -13,6 +13,7 @@ type OrderItem struct {
 	ProductId   primitive.ObjectID `bson:"productId" json:"productId"`
 	Quantity    int                `bson:"quantity" json:"quantity"`
 	Price       float64            `bson:"price" json:"price"`
+	CostPrice   float64            `bson:"costPrice" json:"costPrice"`
 	Discount    float64            `bson:"discount" json:"discount"`
 	CreatedBy   string             `bson:"createdBy" json:"createdBy"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
@@ -26,6 +27,7 @@ type OrderItemDetail struct {
 	ProductId   primitive.ObjectID `bson:"productId" json:"productId"`
 	Quantity    int                `bson:"quantity" json:"quantity"`
 	Price       float64            `bson:"price" json:"price"`
+	CostPrice   float64            `bson:"costPrice" json:"costPrice"`
 	Discount    float64            `bson:"discount" json:"discount"`
 	CreatedBy   string             `bson:"createdBy" json:"createdBy"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
