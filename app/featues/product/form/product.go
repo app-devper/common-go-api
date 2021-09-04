@@ -5,7 +5,7 @@ type Product struct {
 	NameEn       string  `json:"nameEn"`
 	Description  string  `json:"description"`
 	Price        float64 `json:"price" binding:"required"`
-	CostPrice    float64 `json:"costPrice"`
+	CostPrice    float64 `json:"costPrice" binding:"required"`
 	Unit         string  `json:"unit"`
 	Quantity     int     `json:"quantity"`
 	SerialNumber string  `json:"serialNumber" binding:"required"`
@@ -18,7 +18,7 @@ type UpdateProduct struct {
 	NameEn      string  `json:"nameEn"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price" binding:"required"`
-	CostPrice   float64 `json:"costPrice"`
+	CostPrice   float64 `json:"costPrice" binding:"required"`
 	Unit        string  `json:"unit"`
 	Quantity    int     `json:"quantity" binding:"required"`
 }
