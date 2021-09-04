@@ -26,7 +26,7 @@ type orderEntity struct {
 
 type IOrder interface {
 	CreateOrder(form form.Order) (*model.Order, int, error)
-	GetOrderRange(form form.GetOrder) ([]model.Order, int, error)
+	GetOrderRange(form form.GetOrderRange) ([]model.Order, int, error)
 	UpdateTotal() ([]model.Order, int, error)
 	GetOrderById(id string) (*model.Order, int, error)
 	GetOrderDetailById(id string) (*model.OrderDetail, int, error)
@@ -36,6 +36,7 @@ type IOrder interface {
 	GetTotalOrderById(id string) float64
 	GetTotalCostOrderById(id string) float64
 
+	GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, int, error)
 	GetOrderItemById(id string) (*model.OrderItem, int, error)
 	UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, int, error)
 	RemoveOrderItemById(id string) (*model.OrderItemDetail, int, error)
@@ -121,7 +122,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 	return &data, http.StatusOK, nil
 }
 
-func (entity orderEntity) GetOrderRange(form form.GetOrder) ([]model.Order, int, error) {
+func (entity orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order, int, error) {
 	logrus.Info("GetOrderRange")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -374,6 +375,48 @@ func (entity orderEntity) GetTotalCostOrderById(orderId string) float64 {
 		return 0
 	}
 	return result[0]["totalCost"].(float64)
+}
+
+func (entity orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, int, error) {
+	logrus.Info("GetOrderItemRange")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	cursor, err := entity.orderItemRepo.Aggregate(ctx, []bson.M{
+		{
+			"$match": bson.M{
+				"createdDate": bson.M{
+					"$gt": form.StartDate,
+					"$lt": form.EndDate,
+				},
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "products",
+				"localField":   "productId",
+				"foreignField": "_id",
+				"as":           "product",
+			},
+		},
+		{"$unwind": "$product"},
+	})
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	var items []model.OrderItemDetail
+	for cursor.Next(ctx) {
+		var data model.OrderItemDetail
+		err = cursor.Decode(&data)
+		if err != nil {
+			logrus.Error(err)
+		}
+		items = append(items, data)
+	}
+	if items == nil {
+		items = []model.OrderItemDetail{}
+	}
+	return items, http.StatusOK, nil
 }
 
 func (entity orderEntity) GetOrderItemById(id string) (*model.OrderItem, int, error) {

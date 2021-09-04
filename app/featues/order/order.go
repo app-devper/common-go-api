@@ -24,6 +24,7 @@ func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
 	orderRoute.DELETE("/:orderId", middlewares.RequireAuthenticated(), deleteOrderById(orderEntity, productEntity))
 	orderRoute.GET("/:orderId/total-cost", updateTotalCost(orderEntity, productEntity))
 
+	orderRoute.GET("/item", getOrderItemRange(orderEntity))
 	orderRoute.GET("/item/:itemId", getOrderItemById(orderEntity))
 	orderRoute.DELETE("/item/:itemId", middlewares.RequireAuthenticated(), deleteOrderItemById(orderEntity, productEntity))
 	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
@@ -67,7 +68,7 @@ func createOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 
 func getOrderRange(orderEntity repository.IOrder) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		request := form.GetOrder{}
+		request := form.GetOrderRange{}
 		if err := ctx.ShouldBindQuery(&request); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -156,6 +157,23 @@ func deleteOrderById(orderEntity repository.IOrder, productEntity repository2.IP
 		format := "02 Jan 2006 15:04"
 		date := result.CreatedDate.In(location).Format(format)
 		_, _ = core.NotifyMassage("ยกเลิกรายการวันที่ " + date + "\n\n" + message)
+
+		ctx.JSON(code, result)
+	}
+}
+
+func getOrderItemRange(orderEntity repository.IOrder) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		request := form.GetOrderRange{}
+		if err := ctx.ShouldBindQuery(&request); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		result, code, err := orderEntity.GetOrderItemRange(request)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
 
 		ctx.JSON(code, result)
 	}

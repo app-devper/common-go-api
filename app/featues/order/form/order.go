@@ -12,7 +12,7 @@ type Order struct {
 	Message   string      `json:"message"`
 }
 
-type GetOrder struct {
+type GetOrderRange struct {
 	StartDate time.Time `form:"startDate" binding:"required"`
 	EndDate   time.Time `form:"endDate" binding:"required"`
 }

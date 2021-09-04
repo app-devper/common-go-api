@@ -15,6 +15,7 @@ type Product struct {
 	Unit         string             `bson:"unit" json:"unit"`
 	Quantity     int                `bson:"quantity" json:"quantity"`
 	SerialNumber string             `bson:"serialNumber" json:"serialNumber"`
+	Category     string             `bson:"category"  json:"category"`
 	CreatedBy    string             `bson:"createdBy" json:"createdBy"`
 	CreatedDate  time.Time          `bson:"createdDate" json:"createdDate"`
 	UpdatedBy    string             `bson:"updatedBy" json:"updatedBy"`

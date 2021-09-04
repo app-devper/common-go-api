@@ -9,6 +9,7 @@ type Product struct {
 	Unit         string  `json:"unit"`
 	Quantity     int     `json:"quantity"`
 	SerialNumber string  `json:"serialNumber" binding:"required"`
+	Category     string  `json:"category"`
 	LotNumber    string  `json:"lotNumber"`
 	ExpireDate   string  `json:"expireDate"`
 }
@@ -21,6 +22,7 @@ type UpdateProduct struct {
 	CostPrice   float64 `json:"costPrice" binding:"required"`
 	Unit        string  `json:"unit"`
 	Quantity    int     `json:"quantity" binding:"required"`
+	Category    string  `json:"category"`
 }
 
 type ProductLot struct {
