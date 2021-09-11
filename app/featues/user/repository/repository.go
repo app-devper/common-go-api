@@ -32,7 +32,9 @@ type IUser interface {
 	GetUserById(id string) (*model.User, int, error)
 	CreateUser(form form.User) (*model.User, int, error)
 	RemoveUserById(id string) (*model.User, int, error)
-	UpdateUserById(id string, form form.User) (*model.User, int, error)
+	UpdateUserById(id string, form form.UpdateUser) (*model.User, int, error)
+	UpdateStatusById(id string, form form.UpdateStatus) (*model.User, int, error)
+	UpdateRoleById(id string, form form.UpdateRole) (*model.User, int, error)
 	ChangePassword(id string, form form.ChangePassword) (*model.User, int, error)
 
 	SetPassword(id string, form form.SetPassword) (*model.User, int, error)
@@ -170,7 +172,7 @@ func (entity *userEntity) RemoveUserById(id string) (*model.User, int, error) {
 	return &user, http.StatusOK, nil
 }
 
-func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User, int, error) {
+func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*model.User, int, error) {
 	logrus.Info("UpdateUserById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -182,8 +184,61 @@ func (entity *userEntity) UpdateUserById(id string, form form.User) (*model.User
 	}
 	user.FirstName = form.FirstName
 	user.LastName = form.LastName
-	user.Username = form.Username
-	user.Password = bcrypt2.HashPassword(form.Password)
+	user.Email = form.Email
+	user.Phone = form.Phone
+	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
+	user.UpdatedDate = time.Now()
+
+	isReturnNewDoc := options.After
+	opts := &options.FindOneAndUpdateOptions{
+		ReturnDocument: &isReturnNewDoc,
+	}
+	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	return user, http.StatusOK, nil
+}
+
+func (entity *userEntity) UpdateStatusById(id string, form form.UpdateStatus) (*model.User, int, error) {
+	logrus.Info("UpdateStatusById")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	objId, _ := primitive.ObjectIDFromHex(id)
+	user, _, err := entity.GetUserById(id)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusNotFound, err
+	}
+	user.Status = form.Status
+	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
+	user.UpdatedDate = time.Now()
+
+	isReturnNewDoc := options.After
+	opts := &options.FindOneAndUpdateOptions{
+		ReturnDocument: &isReturnNewDoc,
+	}
+	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusBadRequest, err
+	}
+	return user, http.StatusOK, nil
+}
+
+func (entity *userEntity) UpdateRoleById(id string, form form.UpdateRole) (*model.User, int, error) {
+	logrus.Info("UpdateRoleById")
+	ctx, cancel := core.InitContext()
+	defer cancel()
+	objId, _ := primitive.ObjectIDFromHex(id)
+	user, _, err := entity.GetUserById(id)
+	if err != nil {
+		logrus.Error(err)
+		return nil, http.StatusNotFound, err
+	}
+
+	user.Role = form.Role
 	user.UpdatedBy, _ = primitive.ObjectIDFromHex(form.UpdatedBy)
 	user.UpdatedDate = time.Now()
 

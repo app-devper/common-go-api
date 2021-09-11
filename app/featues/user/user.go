@@ -21,22 +21,23 @@ func ApplyUserAPI(app *gin.RouterGroup, resource *db.Resource) {
 	authRoute.POST("/verification/user", verifyUser(userEntity))
 	authRoute.POST("/verification/request", verifyRequest(userEntity))
 	authRoute.POST("/verification/code", verifyCode(userEntity))
-	authRoute.GET("/verification/info", middlewares.RequireActionToken(), verifyActionToken(userEntity))
-	authRoute.POST("/set-password", middlewares.RequireActionToken(), setPassword(userEntity))
+	authRoute.GET("/verification/info", middlewares.RequireActionToken(), getVerifyInfo(userEntity))
 
 	userRoute := app.Group("/user")
-	userRoute.Use(middlewares.RequireAuthenticated())
-	userRoute.GET("/info", getUserInfo(userEntity))
-	userRoute.PUT("/info", updateUserInfo(userEntity))
-	userRoute.PUT("/change-password", changePassword(userEntity))
-	userRoute.GET("/keep-alive", keepAlive(userEntity))
+	userRoute.GET("/info", middlewares.RequireAuthenticated(), getUserInfo(userEntity))
+	userRoute.PUT("/info", middlewares.RequireAuthenticated(), updateUserInfo(userEntity))
+	userRoute.PUT("/change-password", middlewares.RequireAuthenticated(), changePassword(userEntity))
+	userRoute.GET("/keep-alive", middlewares.RequireAuthenticated(), keepAlive(userEntity))
+	userRoute.POST("/set-password", middlewares.RequireActionToken(), setPassword(userEntity))
 
 	// ADMIN
-	userRoute.GET("/:id", middlewares.RequireAuthorization(constant.ADMIN), getUserById(userEntity))
-	userRoute.DELETE("/:id", middlewares.RequireAuthorization(constant.ADMIN), deleteUserById(userEntity))
-	userRoute.GET("", middlewares.RequireAuthorization(constant.ADMIN), getAllUser(userEntity))
-	userRoute.POST("", middlewares.RequireAuthorization(constant.ADMIN), addUser(userEntity))
-	userRoute.PUT("/:id", middlewares.RequireAuthorization(constant.ADMIN), updateUser(userEntity))
+	userRoute.GET("/:id", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), getUserById(userEntity))
+	userRoute.DELETE("/:id", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), deleteUserById(userEntity))
+	userRoute.GET("", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), getAllUser(userEntity))
+	userRoute.POST("", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), addUser(userEntity))
+	userRoute.PUT("/:id", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), updateUser(userEntity))
+	userRoute.PATCH("/:id/status", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), updateStatusById(userEntity))
+	userRoute.PATCH("/:id/role", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), updateRoleById(userEntity))
 }
 
 func login(userEntity repository.IUser) gin.HandlerFunc {
@@ -51,10 +52,13 @@ func login(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong username or password"})
 			return
 		}
+		if user.Status != constant.ACTIVE {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not active"})
+			return
+		}
 		token := middlewares.GenerateJwtToken(*user)
 		response := gin.H{
 			"accessToken": token,
-			"user":        user,
 		}
 		ctx.JSON(code, response)
 	}
@@ -123,7 +127,7 @@ func verifyRequest(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.Status == constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user ref is active"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "User ref is active"})
 			return
 		}
 		userRef, code, err = userEntity.UpdateVerification(userRequest)
@@ -148,11 +152,11 @@ func verifyCode(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.Status == constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user ref is active"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "User ref is active"})
 			return
 		}
 		if userRequest.RefId != userRef.RefId || userRequest.Code != userRef.Code {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong code"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong code"})
 			return
 		}
 		userRef, code, err = userEntity.ActiveVerification(userRequest.UserRefId)
@@ -168,7 +172,7 @@ func verifyCode(userEntity repository.IUser) gin.HandlerFunc {
 	}
 }
 
-func verifyActionToken(userEntity repository.IUser) gin.HandlerFunc {
+func getVerifyInfo(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRefId := ctx.GetString("UserRefId")
 		userRef, code, err := userEntity.GetVerificationById(userRefId)
@@ -255,6 +259,10 @@ func keepAlive(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
+		if user.Status != constant.ACTIVE {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not active"})
+			return
+		}
 		token := middlewares.GenerateJwtToken(*user)
 		response := gin.H{
 			"accessToken": token,
@@ -336,7 +344,7 @@ func updateUser(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		id := ctx.Param("id")
-		userRequest := form.User{}
+		userRequest := form.UpdateUser{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -360,7 +368,7 @@ func updateUserInfo(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest := form.User{}
+		userRequest := form.UpdateUser{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -368,6 +376,56 @@ func updateUserInfo(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		userRequest.UpdatedBy = userId
 		user, code, err := userEntity.UpdateUserById(userId, userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, user)
+	}
+}
+
+func updateStatusById(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetUserById(userId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		id := ctx.Param("id")
+		userRequest := form.UpdateStatus{}
+		err = ctx.ShouldBind(&userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		userRequest.UpdatedBy = userId
+		user, code, err := userEntity.UpdateStatusById(id, userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(code, user)
+	}
+}
+
+func updateRoleById(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userId := ctx.GetString("UserId")
+		_, code, err := userEntity.GetUserById(userId)
+		if err != nil {
+			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			return
+		}
+		id := ctx.Param("id")
+		userRequest := form.UpdateRole{}
+		err = ctx.ShouldBind(&userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		userRequest.UpdatedBy = userId
+		user, code, err := userEntity.UpdateRoleById(id, userRequest)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
