@@ -59,10 +59,10 @@ func RequireAuthorization(auths ...string) gin.HandlerFunc {
 	}
 }
 
-func invalidRequest(c *gin.Context) {
-	c.JSON(http.StatusForbidden, gin.H{"error": "Invalid request, restricted endpoint"})
+func invalidRequest(ctx *gin.Context) {
+	ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid request, restricted endpoint"})
 }
 
-func notPermission(c *gin.Context) {
-	c.JSON(http.StatusForbidden, gin.H{"error": "Dont have permission"})
+func notPermission(ctx *gin.Context) {
+	ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Don't have permission"})
 }

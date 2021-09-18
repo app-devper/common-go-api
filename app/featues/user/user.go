@@ -292,13 +292,13 @@ func getUserById(userEntity repository.IUser) gin.HandlerFunc {
 func deleteUserById(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userId := ctx.GetString("UserId")
-		found, code, err := userEntity.GetUserById(userId)
+		_, code, err := userEntity.GetUserById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 			return
 		}
 		id := ctx.Param("id")
-		if found.Id.Hex() == id {
+		if userId == id {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Can't delete self user"})
 			return
 		}
@@ -393,6 +393,10 @@ func updateStatusById(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		id := ctx.Param("id")
+		if userId == id {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Can't update self user"})
+			return
+		}
 		userRequest := form.UpdateStatus{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
@@ -418,6 +422,10 @@ func updateRoleById(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		id := ctx.Param("id")
+		if userId == id {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Can't update self user"})
+			return
+		}
 		userRequest := form.UpdateRole{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
