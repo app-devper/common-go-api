@@ -9,6 +9,7 @@ import (
 	repository2 "mgo-gin/app/featues/product/repository"
 	"mgo-gin/db"
 	"mgo-gin/middlewares"
+	"mgo-gin/utils/constant"
 	"net/http"
 	"time"
 )
@@ -21,12 +22,13 @@ func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
 	orderRoute.POST("", createOrder(orderEntity, productEntity))
 	orderRoute.GET("", getOrderRange(orderEntity))
 	orderRoute.GET("/:orderId", getOrderById(orderEntity))
-	orderRoute.DELETE("/:orderId", middlewares.RequireAuthenticated(), deleteOrderById(orderEntity, productEntity))
-	orderRoute.GET("/:orderId/total-cost", updateTotalCost(orderEntity, productEntity))
+	orderRoute.DELETE("/:orderId", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), deleteOrderById(orderEntity, productEntity))
+	orderRoute.GET("/:orderId/total-cost", middlewares.RequireAuthenticated(), updateTotalCost(orderEntity, productEntity))
 
 	orderRoute.GET("/item", getOrderItemRange(orderEntity))
 	orderRoute.GET("/item/:itemId", getOrderItemById(orderEntity))
-	orderRoute.DELETE("/item/:itemId", middlewares.RequireAuthenticated(), deleteOrderItemById(orderEntity, productEntity))
+	orderRoute.DELETE("/item/:itemId", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), deleteOrderItemById(orderEntity, productEntity))
+
 	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
 
 	orderRoute.DELETE("/:orderId/product/:productId", middlewares.RequireAuthenticated(), deleteOrderItemByOrderProductId(orderEntity, productEntity))
@@ -40,10 +42,12 @@ func createOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
+		totalCost := 0.0
 		for index, item := range request.Items {
 			request.Items[index].CostPrice = productEntity.GetTotalCostPrice(item.ProductId, item.Quantity)
+			totalCost += request.Items[index].CostPrice
 		}
+		request.TotalCost = totalCost
 
 		result, code, err := orderEntity.CreateOrder(request)
 		if err != nil {
