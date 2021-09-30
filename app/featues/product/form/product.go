@@ -21,7 +21,7 @@ type UpdateProduct struct {
 	Price       float64 `json:"price" binding:"required"`
 	CostPrice   float64 `json:"costPrice" binding:"required"`
 	Unit        string  `json:"unit"`
-	Quantity    int     `json:"quantity" binding:"required"`
+	Quantity    int     `json:"quantity"`
 	Category    string  `json:"category"`
 }
 

@@ -11,6 +11,7 @@ import (
 	"mgo-gin/app/featues/product/model"
 	"mgo-gin/db"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -75,6 +76,7 @@ func (entity *productEntity) GetProductAll() ([]model.Product, int, error) {
 		err = cursor.Decode(&user)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Error(cursor.Current)
 		}
 		products = append(products, user)
 	}
@@ -101,12 +103,13 @@ func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, i
 	logrus.Info("CreateProduct")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	data, _, _ := entity.GetProductBySerialNumber(form.SerialNumber)
+	serialNumber := strings.TrimSpace(form.SerialNumber)
+	data, _, _ := entity.GetProductBySerialNumber(serialNumber)
 	if data != nil {
 		data.Name = form.Name
 		data.NameEn = form.NameEn
 		data.Description = form.Description
-		data.SerialNumber = form.SerialNumber
+		data.SerialNumber = serialNumber
 		data.Price = form.Price
 		data.CostPrice = form.CostPrice
 		data.Unit = form.Unit
@@ -134,7 +137,7 @@ func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, i
 		data.Name = form.Name
 		data.NameEn = form.NameEn
 		data.Description = form.Description
-		data.SerialNumber = form.SerialNumber
+		data.SerialNumber = serialNumber
 		data.Unit = form.Unit
 		data.Price = form.Price
 		data.CostPrice = form.CostPrice
