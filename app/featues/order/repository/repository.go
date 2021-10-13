@@ -70,6 +70,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 		Status:      constant.ACTIVE,
 		Total:       form.Total,
 		TotalCost:   form.TotalCost,
+		Type:        form.Type,
 		CreatedDate: time.Now(),
 		UpdatedDate: time.Now(),
 	}

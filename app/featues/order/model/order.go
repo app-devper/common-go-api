@@ -15,6 +15,7 @@ type Order struct {
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 	Total       float64            `bson:"total" json:"total"`
 	TotalCost   float64            `bson:"totalCost" json:"totalCost"`
+	Type        string             `bson:"type" json:"type"`
 }
 
 type OrderDetail struct {
@@ -27,6 +28,7 @@ type OrderDetail struct {
 	UpdatedDate time.Time          `bson:"updatedDate" json:"updatedDate"`
 	Total       float64            `bson:"total" json:"total"`
 	TotalCost   float64            `bson:"totalCost" json:"totalCost"`
+	Type        string             `bson:"type" json:"type"`
 	Items       []OrderItemDetail  `json:"items"`
 	Payment     Payment            `json:"payment"`
 }
