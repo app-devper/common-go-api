@@ -20,7 +20,10 @@ type Routes struct {
 func (app Routes) StartGin() {
 	r := gin.New()
 
-	_ = r.SetTrustedProxies(nil)
+	err := r.SetTrustedProxies(nil)
+	if err != nil {
+		logrus.Error(err)
+	}
 
 	r.Use(gin.Logger())
 	r.Use(middlewares.NewRecovery())
@@ -44,5 +47,8 @@ func (app Routes) StartGin() {
 		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service Missing / Not found."})
 	})
 
-	_ = r.Run(":" + os.Getenv("PORT"))
+	err = r.Run(":" + os.Getenv("PORT"))
+	if err != nil {
+		logrus.Error(err)
+	}
 }
