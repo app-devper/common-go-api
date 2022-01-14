@@ -20,6 +20,8 @@ type Routes struct {
 func (app Routes) StartGin() {
 	r := gin.New()
 
+	_ = r.SetTrustedProxies(nil)
+
 	r.Use(gin.Logger())
 	r.Use(middlewares.NewRecovery())
 	r.Use(middlewares.NewCors([]string{"*"}))
