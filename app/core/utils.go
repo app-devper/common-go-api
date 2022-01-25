@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"github.com/sirupsen/logrus"
 	"mgo-gin/app/core/notify"
 	"os"
@@ -15,6 +16,10 @@ func InitContext() (context.Context, context.CancelFunc) {
 
 func NotifyMassage(massage string) (*notify.Response, error) {
 	token := os.Getenv("LINE_TOKEN")
+	if token == "" {
+		err := errors.New("line token empty")
+		return nil, err
+	}
 	c := notify.NewClient()
 	res, err := c.NotifyMessage(context.Background(), token, massage)
 	if err != nil {

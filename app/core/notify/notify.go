@@ -20,13 +20,15 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
+const notifyApiUrl = "https://notify-api.line.me/api/notify"
+
 // NewClient returns *Client
 func NewClient() *Client {
 	return &Client{HTTPClient: http.DefaultClient}
 }
 
 // NotifyMessage notify text message
-func (c *Client) NotifyMessage(ctx context.Context, token, message string) (*Response, error) {
+func (c *Client) NotifyMessage(ctx context.Context, token string, message string) (*Response, error) {
 	body, contentType, err := c.requestBody(message)
 	if err != nil {
 		return nil, err
@@ -35,7 +37,7 @@ func (c *Client) NotifyMessage(ctx context.Context, token, message string) (*Res
 }
 
 func (c *Client) notify(ctx context.Context, token string, body io.Reader, contentType string) (*Response, error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://notify-api.line.me/api/notify", body)
+	req, err := http.NewRequestWithContext(ctx, "POST", notifyApiUrl, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new request: %w", err)
 	}
