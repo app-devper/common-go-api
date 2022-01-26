@@ -8,9 +8,9 @@ import (
 	"mgo-gin/app/featues/order"
 	"mgo-gin/app/featues/product"
 	"mgo-gin/app/featues/user"
+	"mgo-gin/app/featues/user/repository"
 	"mgo-gin/db"
 	"mgo-gin/middlewares"
-	"net/http"
 	"os"
 )
 
@@ -37,15 +37,16 @@ func (app Routes) StartGin() {
 
 	publicRoute := r.Group("/api/v1")
 
-	user.ApplyUserAPI(publicRoute, resource)
+	userEntity := repository.NewUserEntity(resource)
+
+	user.ApplyAuthAPI(publicRoute, userEntity)
+	user.ApplyUserAPI(publicRoute, userEntity)
 	notification.ApplyNotificationAPI(publicRoute, resource)
 	product.ApplyProductAPI(publicRoute, resource)
 	order.ApplyOrderAPI(publicRoute, resource)
 	category.ApplyCategoryAPI(publicRoute, resource)
 
-	r.NoRoute(func(context *gin.Context) {
-		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service Missing / Not found."})
-	})
+	r.NoRoute(middlewares.NoRoute())
 
 	err = r.Run(":" + os.Getenv("PORT"))
 	if err != nil {

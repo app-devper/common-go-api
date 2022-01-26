@@ -49,6 +49,10 @@ func NewUserEntity(resource *db.Resource) IUser {
 	userRepo := resource.DB.Collection("users")
 	verifyRepo := resource.DB.Collection("verifications")
 	UserEntity = &userEntity{resource: resource, userRepo: userRepo, verifyRepo: verifyRepo}
+	_, err := UserEntity.CreateIndex()
+	if err != nil {
+		logrus.Error(err)
+	}
 	return UserEntity
 }
 
