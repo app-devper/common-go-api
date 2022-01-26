@@ -14,15 +14,45 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 	_, _ = productEntity.CreateIndex()
 
 	productRoute := app.Group("product")
-	productRoute.GET("", getAll(productEntity))
-	productRoute.POST("", middlewares.RequireAuthenticated(), createProduct(productEntity))
-	productRoute.GET("/:productId", getProductById(productEntity))
-	productRoute.PUT("/:productId", middlewares.RequireAuthenticated(), updateProductById(productEntity))
-	productRoute.DELETE("/:productId", middlewares.RequireAuthenticated(), deleteProductById(productEntity))
-	productRoute.GET("/serial-number/:serialNumber", getProductBySerialNumber(productEntity))
-	productRoute.GET("/:productId/lot", getLotAllByProductId(productEntity))
-	productRoute.PUT("/lot/:lotId", updateLotById(productEntity))
-	productRoute.GET("/lot/:lotId", getLotById(productEntity))
+
+	productRoute.GET("",
+		getAll(productEntity),
+	)
+
+	productRoute.POST("",
+		middlewares.RequireAuthenticated(),
+		createProduct(productEntity),
+	)
+
+	productRoute.GET("/:productId",
+		getProductById(productEntity),
+	)
+
+	productRoute.PUT("/:productId",
+		middlewares.RequireAuthenticated(),
+		updateProductById(productEntity),
+	)
+
+	productRoute.DELETE("/:productId",
+		middlewares.RequireAuthenticated(),
+		deleteProductById(productEntity),
+	)
+
+	productRoute.GET("/serial-number/:serialNumber",
+		getProductBySerialNumber(productEntity),
+	)
+
+	productRoute.GET("/:productId/lot",
+		getLotAllByProductId(productEntity),
+	)
+
+	productRoute.PUT("/lot/:lotId",
+		updateLotById(productEntity),
+	)
+
+	productRoute.GET("/lot/:lotId",
+		getLotById(productEntity),
+	)
 }
 
 func getAll(productEntity repository.IProduct) gin.HandlerFunc {
