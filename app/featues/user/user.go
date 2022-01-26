@@ -32,6 +32,11 @@ func ApplyUserAPI(app *gin.RouterGroup, userEntity repository.IUser) {
 		usecase.KeepAlive(userEntity),
 	)
 
+	userRoute.GET("/verify-password",
+		middlewares.RequireAuthenticated(),
+		usecase.VerifyPassword(userEntity),
+	)
+
 	// ADMIN
 	userRoute.GET("",
 		middlewares.RequireAuthenticated(),
