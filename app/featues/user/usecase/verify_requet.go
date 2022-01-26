@@ -6,6 +6,7 @@ import (
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func VerifyRequest(userEntity repository.IUser) gin.HandlerFunc {
@@ -22,6 +23,10 @@ func VerifyRequest(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		if userRef.Status == constant.ACTIVE {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "User ref is active"})
+			return
+		}
+		if userRef.ExpireDate.Before(time.Now()) {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "token invalid"})
 			return
 		}
 		result, err := userEntity.UpdateVerification(userRequest)

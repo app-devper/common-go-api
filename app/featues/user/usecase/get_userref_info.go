@@ -4,6 +4,7 @@ import (
 	"devper/app/featues/user/repository"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func GetUserRefInfo(userEntity repository.IUser) gin.HandlerFunc {
@@ -12,6 +13,10 @@ func GetUserRefInfo(userEntity repository.IUser) gin.HandlerFunc {
 		userRef, err := userEntity.GetVerificationById(userRefId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.ExpireDate.Before(time.Now()) {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "token invalid"})
 			return
 		}
 		result, err := userEntity.GetUserById(userRef.UserId.Hex())

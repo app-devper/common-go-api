@@ -6,6 +6,7 @@ import (
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
@@ -18,6 +19,10 @@ func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		if userRef.Objective != constant.SetPassword {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong objective"})
+			return
+		}
+		if userRef.ExpireDate.Before(time.Now()) {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "token invalid"})
 			return
 		}
 		user, err := userEntity.GetUserById(userRef.UserId.Hex())
