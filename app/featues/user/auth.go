@@ -19,19 +19,19 @@ func ApplyAuthAPI(app *gin.RouterGroup, userEntity repository.IUser) {
 		usecase.SignUp(userEntity),
 	)
 
-	authRoute.POST("/verification/user",
+	authRoute.POST("/verify-user",
 		usecase.VerifyUser(userEntity),
 	)
 
-	authRoute.POST("/verification/request",
+	authRoute.POST("/verify-request",
 		usecase.VerifyRequest(userEntity),
 	)
 
-	authRoute.POST("/verification/code",
+	authRoute.POST("/verify-code",
 		usecase.VerifyCode(userEntity),
 	)
 
-	authRoute.GET("/verification/info",
+	authRoute.GET("/verify-info",
 		middlewares.RequireActionToken(),
 		usecase.GetUserRefInfo(userEntity),
 	)
