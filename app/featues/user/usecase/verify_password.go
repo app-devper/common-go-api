@@ -33,7 +33,7 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 		ref := form.Reference{
 			UserId:      user.Id,
 			Objective:   userRequest.Objective,
-			Channel:     "USER_REF_ID",
+			Channel:     "ACCESS_TOKEN",
 			ChannelInfo: userRefId,
 			ExpireDate:  expirationTime,
 			Status:      constant.ACTIVE,
@@ -43,7 +43,7 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		token := middlewares.GenerateActionToken(userRef.Id.Hex())
+		token := middlewares.GenerateActionToken(userRef.Id.Hex(), expirationTime)
 		result := gin.H{
 			"actionToken": token,
 		}

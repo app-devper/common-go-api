@@ -20,7 +20,7 @@ type Channel struct {
 	ChannelInfo string `json:"channelInfo"`
 }
 
-type VerifyRequest struct {
+type VerifyChannel struct {
 	UserRefId   string `json:"userRefId" binding:"required"`
 	Channel     string `json:"channel" binding:"required"`
 	ChannelInfo string `json:"channelInfo" binding:"required"`

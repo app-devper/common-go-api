@@ -25,22 +25,16 @@ type ActionClaims struct {
 }
 
 func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) string {
-	// Declare the expiration time of the token
-	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
 		UserRefId: userRefId,
 		Role:      role,
 		StandardClaims: jwt.StandardClaims{
-			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
 			Audience:  "user",
 			Issuer:    "uit",
 		},
 	}
-
-	// Declare the token with the algorithm used for signing, and the claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// Create the JWT string
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		logrus.Error(err)
@@ -48,8 +42,7 @@ func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) s
 	return tokenString
 }
 
-func GenerateActionToken(userRefId string) string {
-	expirationTime := time.Now().Add(3 * time.Minute)
+func GenerateActionToken(userRefId string, expirationTime time.Time) string {
 	claims := &ActionClaims{
 		UserRefId: userRefId,
 		StandardClaims: jwt.StandardClaims{
@@ -76,14 +69,12 @@ func RequireAuthenticated() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
 			return
 		}
-		// Initialize a new instance of `Claims`
 		claims := &Claims{}
 		tkn, err := jwt.ParseWithClaims(jwtToken[1], claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
+			logrus.Error(err)
 		}
 		if tkn == nil || !tkn.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid authorization header"})
@@ -108,8 +99,7 @@ func RequireActionToken() gin.HandlerFunc {
 			return jwtKey, nil
 		})
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
+			logrus.Error(err)
 		}
 		if tkn == nil || !tkn.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid action token header"})

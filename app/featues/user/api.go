@@ -24,22 +24,22 @@ func ApplyAuthAPI(app *gin.RouterGroup, userEntity repository.IUser) {
 		usecase.VerifyUser(userEntity),
 	)
 
-	authRoute.POST("/verify-request",
-		usecase.VerifyRequest(userEntity),
+	authRoute.POST("/verify-channel",
+		usecase.VerifyUserChannel(userEntity),
 	)
 
 	authRoute.POST("/verify-code",
-		usecase.VerifyCode(userEntity),
+		usecase.VerifyUserCode(userEntity),
 	)
 
 	authRoute.GET("/verify-info",
 		middlewares.RequireActionToken(),
-		usecase.GetUserRefInfo(userEntity),
+		usecase.GetVerifyInfo(userEntity),
 	)
 
-	authRoute.POST("/set-password",
-		middlewares.RequireActionToken(),
-		usecase.SetPassword(userEntity),
+	authRoute.POST("/verify-password",
+		middlewares.RequireAuthenticated(),
+		usecase.VerifyPassword(userEntity),
 	)
 
 	authRoute.POST("/logout",
@@ -73,9 +73,9 @@ func ApplyUserAPI(app *gin.RouterGroup, userEntity repository.IUser) {
 		usecase.KeepAlive(userEntity),
 	)
 
-	userRoute.POST("/verify-password",
-		middlewares.RequireAuthenticated(),
-		usecase.VerifyPassword(userEntity),
+	userRoute.POST("/set-password",
+		middlewares.RequireActionToken(),
+		usecase.SetPassword(userEntity),
 	)
 
 	// ADMIN

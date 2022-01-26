@@ -3,15 +3,15 @@ package usecase
 import (
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
-	"devper/middlewares"
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
-func VerifyCode(userEntity repository.IUser) gin.HandlerFunc {
+func VerifyUserChannel(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userRequest := form.VerifyCode{}
+		userRequest := form.VerifyChannel{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -25,18 +25,11 @@ func VerifyCode(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "User ref is active"})
 			return
 		}
-		if userRequest.RefId != userRef.RefId || userRequest.Code != userRef.Code {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong code"})
-			return
-		}
-		userRef, err = userEntity.ActiveVerification(userRequest.UserRefId)
+		expirationTime := time.Now().Add(5 * time.Minute)
+		result, err := userEntity.UpdateVerification(userRequest, expirationTime)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-		actionToken := middlewares.GenerateActionToken(userRequest.UserRefId)
-		result := gin.H{
-			"actionToken": actionToken,
 		}
 		ctx.JSON(http.StatusOK, result)
 	}

@@ -39,8 +39,8 @@ type IUser interface {
 
 	SetPassword(id string, form form.SetPassword) (*model.User, error)
 	CreateVerification(form form.Reference) (*model.UserReference, error)
-	UpdateVerification(form form.VerifyRequest) (*model.UserReference, error)
-	ActiveVerification(userRefId string) (*model.UserReference, error)
+	UpdateVerification(form form.VerifyChannel, expireTime time.Time) (*model.UserReference, error)
+	ActiveVerification(userRefId string, expireTime time.Time) (*model.UserReference, error)
 	RevokeVerification(userRefId string) (*model.UserReference, error)
 	RemoveVerificationObjective(objective string) error
 	GetVerificationById(userRefId string) (*model.UserReference, error)
@@ -352,7 +352,7 @@ func (entity *userEntity) CreateVerification(form form.Reference) (*model.UserRe
 	return &reference, nil
 }
 
-func (entity *userEntity) UpdateVerification(form form.VerifyRequest) (*model.UserReference, error) {
+func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime time.Time) (*model.UserReference, error) {
 	logrus.Info("UpdateVerification")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -367,7 +367,7 @@ func (entity *userEntity) UpdateVerification(form form.VerifyRequest) (*model.Us
 	reference.ChannelInfo = form.ChannelInfo
 	reference.Code, _ = bcrypt2.GenerateCode(6)
 	reference.RefId, _ = bcrypt2.GenerateRefId(4)
-	reference.ExpireDate = time.Now().Add(5 * time.Minute)
+	reference.ExpireDate = expireTime
 	reference.ValidPeriod = 5
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
@@ -381,7 +381,7 @@ func (entity *userEntity) UpdateVerification(form form.VerifyRequest) (*model.Us
 	return &reference, nil
 }
 
-func (entity *userEntity) ActiveVerification(userRefId string) (*model.UserReference, error) {
+func (entity *userEntity) ActiveVerification(userRefId string, expireTime time.Time) (*model.UserReference, error) {
 	logrus.Info("ActiveVerification")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -393,6 +393,7 @@ func (entity *userEntity) ActiveVerification(userRefId string) (*model.UserRefer
 		return nil, err
 	}
 	reference.Status = constant.ACTIVE
+	reference.ExpireDate = expireTime
 	isReturnNewDoc := options.After
 	opts := &options.FindOneAndUpdateOptions{
 		ReturnDocument: &isReturnNewDoc,
