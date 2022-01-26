@@ -1,18 +1,20 @@
 package usecase
 
 import (
+	"devper/app/featues/user/form"
+	"devper/app/featues/user/repository"
+	"errors"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/user/form"
-	"mgo-gin/app/featues/user/repository"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func AddUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId := ctx.GetString("UserId")
-		_, code, err := userEntity.GetUserById(userId)
+		userRefId := ctx.GetString("UserRefId")
+		user, err := userEntity.GetUserByRefId(userRefId)
 		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.User{}
@@ -21,12 +23,19 @@ func AddUser(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		userRequest.CreatedBy = userId
-		user, code, err := userEntity.CreateUser(userRequest)
-		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+		found, _ := userEntity.GetUserByUsername(userRequest.Username)
+		if found != nil {
+			err := errors.New("username is taken")
+			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		ctx.JSON(code, user)
+		userRequest.CreatedBy = user.Id.Hex()
+		result, err := userEntity.CreateUser(userRequest)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, result)
 	}
 }

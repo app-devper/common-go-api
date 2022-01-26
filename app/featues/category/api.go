@@ -1,26 +1,43 @@
 package category
 
 import (
+	"devper/app/featues/category/form"
+	"devper/app/featues/category/repository"
+	"devper/middlewares"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/category/form"
-	"mgo-gin/app/featues/category/repository"
-	"mgo-gin/db"
-	"mgo-gin/middlewares"
 	"net/http"
 )
 
-func ApplyCategoryAPI(app *gin.RouterGroup, resource *db.Resource) {
-	categoryEntity := repository.NewCategoryEntity(resource)
-	_, _ = categoryEntity.CreateIndex()
-
+func ApplyCategoryAPI(app *gin.RouterGroup, categoryEntity repository.ICategory) {
 	productRoute := app.Group("category")
-	productRoute.GET("", getCategoryAll(categoryEntity))
-	productRoute.POST("", middlewares.RequireAuthenticated(), createCategory(categoryEntity))
-	productRoute.GET("/:categoryId", getCategoryById(categoryEntity))
-	productRoute.PUT("/:categoryId", middlewares.RequireAuthenticated(), updateCategoryById(categoryEntity))
-	productRoute.DELETE("/:categoryId", middlewares.RequireAuthenticated(), deleteCategoryById(categoryEntity))
-	productRoute.PATCH("/:categoryId/default", middlewares.RequireAuthenticated(), updateDefaultCategoryById(categoryEntity))
 
+	productRoute.GET("",
+		getCategoryAll(categoryEntity),
+	)
+
+	productRoute.POST("",
+		middlewares.RequireAuthenticated(),
+		createCategory(categoryEntity),
+	)
+
+	productRoute.GET("/:categoryId",
+		getCategoryById(categoryEntity),
+	)
+
+	productRoute.PUT("/:categoryId",
+		middlewares.RequireAuthenticated(),
+		updateCategoryById(categoryEntity),
+	)
+
+	productRoute.DELETE("/:categoryId",
+		middlewares.RequireAuthenticated(),
+		deleteCategoryById(categoryEntity),
+	)
+
+	productRoute.PATCH("/:categoryId/default",
+		middlewares.RequireAuthenticated(),
+		updateDefaultCategoryById(categoryEntity),
+	)
 }
 
 func deleteCategoryById(entity repository.ICategory) gin.HandlerFunc {

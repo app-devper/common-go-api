@@ -1,19 +1,19 @@
 package repository
 
 import (
+	"devper/app/core"
+	"devper/app/featues/notification/form"
+	"devper/app/featues/notification/model"
+	"devper/db"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"mgo-gin/app/core"
-	"mgo-gin/app/featues/notification/form"
-	"mgo-gin/app/featues/notification/model"
-	"mgo-gin/db"
 	"net/http"
 )
 
-var NotificationEntity INotification
+var Entity INotification
 
 type notificationEntity struct {
 	resource *db.Resource
@@ -27,8 +27,8 @@ type INotification interface {
 
 func NewNotificationEntity(resource *db.Resource) INotification {
 	pushRepo := resource.DB.Collection("push_devices")
-	NotificationEntity = &notificationEntity{resource: resource, repo: pushRepo}
-	return NotificationEntity
+	Entity = &notificationEntity{resource: resource, repo: pushRepo}
+	return Entity
 }
 
 func (entity *notificationEntity) Subscription(form form.Subscription) (*model.Subscription, int, error) {

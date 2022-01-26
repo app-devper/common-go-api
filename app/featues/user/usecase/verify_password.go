@@ -1,20 +1,22 @@
 package usecase
 
 import (
+	"devper/app/core/bcrypt"
+	"devper/app/featues/user/form"
+	"devper/app/featues/user/repository"
+	"devper/middlewares"
+	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/core/bcrypt"
-	"mgo-gin/app/featues/user/form"
-	"mgo-gin/app/featues/user/repository"
-	"mgo-gin/utils/constant"
 	"net/http"
+	"time"
 )
 
 func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId := ctx.GetString("UserId")
-		user, code, err := userEntity.GetUserById(userId)
+		userRefId := ctx.GetString("UserRefId")
+		user, err := userEntity.GetUserByRefId(userRefId)
 		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.VerifyPassword{}
@@ -26,13 +28,25 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong password"})
 			return
 		}
-		if user.Status != constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not active"})
+		_ = userEntity.RemoveVerificationObjective(userRequest.Objective)
+		expirationTime := time.Now().Add(3 * time.Minute)
+		ref := form.Reference{
+			UserId:      user.Id,
+			Objective:   userRequest.Objective,
+			Channel:     "USER_REF_ID",
+			ChannelInfo: userRefId,
+			ExpireDate:  expirationTime,
+			Status:      constant.ACTIVE,
+		}
+		userRef, err := userEntity.CreateVerification(ref)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		response := gin.H{
-			"message": "success",
+		token := middlewares.GenerateActionToken(userRef.Id.Hex())
+		result := gin.H{
+			"actionToken": token,
 		}
-		ctx.JSON(code, response)
+		ctx.JSON(http.StatusOK, result)
 	}
 }

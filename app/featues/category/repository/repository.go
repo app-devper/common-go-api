@@ -1,25 +1,42 @@
 package repository
 
 import (
+	"devper/app/core"
+	"devper/app/featues/category/form"
+	"devper/app/featues/category/model"
+	"devper/db"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"mgo-gin/app/core"
-	"mgo-gin/app/featues/category/form"
-	"mgo-gin/app/featues/category/model"
-	"mgo-gin/db"
 	"net/http"
 	"strings"
 	"time"
 )
 
-var CategoryEntity ICategory
+var Entity ICategory
 
 type categoryEntity struct {
 	resource     *db.Resource
 	categoryRepo *mongo.Collection
+}
+
+type ICategory interface {
+	CreateIndex() (string, error)
+	GetCategoryAll() ([]model.Category, int, error)
+	CreateCategory(form form.Category) (*model.Category, int, error)
+	GetCategoryById(id string) (*model.Category, int, error)
+	RemoveCategoryById(id string) (*model.Category, int, error)
+	UpdateCategoryById(id string, form form.Category) (*model.Category, int, error)
+	UpdateDefaultCategoryById(id string) (*model.Category, int, error)
+}
+
+func NewCategoryEntity(resource *db.Resource) ICategory {
+	categoryRepo := resource.DB.Collection("categories")
+	Entity = &categoryEntity{resource: resource, categoryRepo: categoryRepo}
+	_, _ = Entity.CreateIndex()
+	return Entity
 }
 
 func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, int, error) {
@@ -172,20 +189,4 @@ func (entity *categoryEntity) CreateIndex() (string, error) {
 	}
 	ind, err := entity.categoryRepo.Indexes().CreateOne(ctx, mod)
 	return ind, err
-}
-
-type ICategory interface {
-	CreateIndex() (string, error)
-	GetCategoryAll() ([]model.Category, int, error)
-	CreateCategory(form form.Category) (*model.Category, int, error)
-	GetCategoryById(id string) (*model.Category, int, error)
-	RemoveCategoryById(id string) (*model.Category, int, error)
-	UpdateCategoryById(id string, form form.Category) (*model.Category, int, error)
-	UpdateDefaultCategoryById(id string) (*model.Category, int, error)
-}
-
-func NewCategoryEntity(resource *db.Resource) ICategory {
-	categoryRepo := resource.DB.Collection("categories")
-	CategoryEntity = &categoryEntity{resource: resource, categoryRepo: categoryRepo}
-	return CategoryEntity
 }

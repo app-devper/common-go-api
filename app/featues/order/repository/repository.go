@@ -1,21 +1,21 @@
 package repository
 
 import (
+	"devper/app/core"
+	"devper/app/featues/order/form"
+	"devper/app/featues/order/model"
+	"devper/db"
+	"devper/utils/constant"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"mgo-gin/app/core"
-	"mgo-gin/app/featues/order/form"
-	"mgo-gin/app/featues/order/model"
-	"mgo-gin/db"
-	"mgo-gin/utils/constant"
 	"net/http"
 	"time"
 )
 
-var OrderEntity IOrder
+var Entity IOrder
 
 type orderEntity struct {
 	resource      *db.Resource
@@ -54,8 +54,8 @@ func NewOrderEntity(resource *db.Resource) IOrder {
 	orderRepo := resource.DB.Collection("orders")
 	orderItemRepo := resource.DB.Collection("order_items")
 	paymentRepo := resource.DB.Collection("payments")
-	OrderEntity = &orderEntity{resource: resource, orderRepo: orderRepo, orderItemRepo: orderItemRepo, paymentRepo: paymentRepo}
-	return OrderEntity
+	Entity = &orderEntity{resource: resource, orderRepo: orderRepo, orderItemRepo: orderItemRepo, paymentRepo: paymentRepo}
+	return Entity
 }
 
 func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error) {

@@ -1,9 +1,9 @@
 package model
 
 import (
+	"devper/app/featues/product/model"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"mgo-gin/app/featues/product/model"
 	"time"
 )
 

@@ -1,23 +1,24 @@
 package usecase
 
 import (
+	"devper/app/featues/user/repository"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/user/repository"
+	"net/http"
 )
 
 func GetUsers(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId := ctx.GetString("UserId")
-		_, code, err := userEntity.GetUserById(userId)
+		userRefId := ctx.GetString("UserRefId")
+		_, err := userEntity.GetUserByRefId(userRefId)
 		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		list, code, err := userEntity.GetUserAll()
+		result, err := userEntity.GetUserAll()
 		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		ctx.JSON(code, list)
+		ctx.JSON(http.StatusOK, result)
 	}
 }

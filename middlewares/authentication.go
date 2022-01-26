@@ -4,7 +4,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"mgo-gin/app/featues/user/model"
 	"net/http"
 	"os"
 	"strings"
@@ -15,8 +14,8 @@ import (
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 type Claims struct {
-	UserId string `json:"userId"`
-	Role   string `json:"role"`
+	UserRefId string `json:"userRefId"`
+	Role      string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -25,14 +24,12 @@ type ActionClaims struct {
 	jwt.StandardClaims
 }
 
-func GenerateJwtToken(user model.User) string {
+func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) string {
 	// Declare the expiration time of the token
-	// here, we have kept it as 5 minutes
-	expirationTime := time.Now().Add(24 * time.Hour)
 	// Create the JWT claims, which includes the username and expiry time
 	claims := &Claims{
-		UserId: user.Id.Hex(),
-		Role:   user.Role,
+		UserRefId: userRefId,
+		Role:      role,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
@@ -92,9 +89,9 @@ func RequireAuthenticated() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid authorization header"})
 			return
 		}
-		c.Set("UserId", claims.UserId)
+		c.Set("UserRefId", claims.UserRefId)
 		c.Set("Role", claims.Role)
-		logrus.Info("UserId: " + claims.UserId)
+		logrus.Info("UserRefId: " + claims.UserRefId)
 		return
 	}
 }

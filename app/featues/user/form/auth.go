@@ -1,5 +1,10 @@
 package form
 
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
+)
+
 type Login struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -25,4 +30,14 @@ type VerifyCode struct {
 	UserRefId string `json:"userRefId" binding:"required"`
 	RefId     string `json:"refId" binding:"required"`
 	Code      string `json:"code" binding:"required"`
+}
+
+type Reference struct {
+	UserId      primitive.ObjectID
+	Objective   string
+	Channel     string
+	ChannelInfo string
+	Status      string
+	ValidPeriod int
+	ExpireDate  time.Time
 }

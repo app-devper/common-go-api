@@ -1,17 +1,15 @@
 package product
 
 import (
+	"devper/app/featues/product/form"
+	"devper/app/featues/product/repository"
+	"devper/middlewares"
+	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/product/form"
-	"mgo-gin/app/featues/product/repository"
-	"mgo-gin/db"
-	"mgo-gin/middlewares"
 	"net/http"
 )
 
-func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
-	productEntity := repository.NewProductEntity(resource)
-	_, _ = productEntity.CreateIndex()
+func ApplyProductAPI(app *gin.RouterGroup, productEntity repository.IProduct) {
 
 	productRoute := app.Group("product")
 
@@ -21,6 +19,7 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 
 	productRoute.POST("",
 		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
 		createProduct(productEntity),
 	)
 
@@ -30,11 +29,13 @@ func ApplyProductAPI(app *gin.RouterGroup, resource *db.Resource) {
 
 	productRoute.PUT("/:productId",
 		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
 		updateProductById(productEntity),
 	)
 
 	productRoute.DELETE("/:productId",
 		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
 		deleteProductById(productEntity),
 	)
 

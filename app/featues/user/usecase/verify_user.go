@@ -1,9 +1,10 @@
 package usecase
 
 import (
+	"devper/app/featues/user/form"
+	"devper/app/featues/user/repository"
+	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/user/form"
-	"mgo-gin/app/featues/user/repository"
 	"net/http"
 )
 
@@ -14,13 +15,18 @@ func VerifyUser(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		user, _, err := userEntity.GetUserByUsername(userRequest.Username)
+		user, err := userEntity.GetUserByUsername(userRequest.Username)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		userRef, code, err := userEntity.CreateVerification(user.Id.Hex(), userRequest.Objective)
+		_ = userEntity.RemoveVerificationObjective(userRequest.Objective)
+		ref := form.Reference{
+			UserId:    user.Id,
+			Objective: userRequest.Objective,
+			Status:    constant.INACTIVE,
+		}
+		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -32,10 +38,10 @@ func VerifyUser(userEntity repository.IUser) gin.HandlerFunc {
 			Channel:     "EMAIL",
 			ChannelInfo: user.Email,
 		}}
-		response := gin.H{
+		result := gin.H{
 			"userRefId":      userRef.Id,
 			"verifyChannels": channels,
 		}
-		ctx.JSON(code, response)
+		ctx.JSON(http.StatusOK, result)
 	}
 }

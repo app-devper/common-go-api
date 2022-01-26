@@ -1,21 +1,21 @@
 package repository
 
 import (
+	"devper/app/core"
+	"devper/app/featues/product/form"
+	"devper/app/featues/product/model"
+	"devper/db"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"mgo-gin/app/core"
-	"mgo-gin/app/featues/product/form"
-	"mgo-gin/app/featues/product/model"
-	"mgo-gin/db"
 	"net/http"
 	"strings"
 	"time"
 )
 
-var ProductEntity IProduct
+var Entity IProduct
 
 type productEntity struct {
 	resource    *db.Resource
@@ -44,8 +44,9 @@ type IProduct interface {
 func NewProductEntity(resource *db.Resource) IProduct {
 	productRepo := resource.DB.Collection("products")
 	lotRepo := resource.DB.Collection("product_lots")
-	ProductEntity = &productEntity{resource: resource, productRepo: productRepo, lotRepo: lotRepo}
-	return ProductEntity
+	Entity = &productEntity{resource: resource, productRepo: productRepo, lotRepo: lotRepo}
+	_, _ = Entity.CreateIndex()
+	return Entity
 }
 
 func (entity *productEntity) CreateIndex() (string, error) {

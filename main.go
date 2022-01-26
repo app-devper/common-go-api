@@ -1,7 +1,7 @@
 package main
 
 import (
-	"mgo-gin/app"
+	"devper/app"
 )
 
 func main() {

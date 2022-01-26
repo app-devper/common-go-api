@@ -1,29 +1,42 @@
 package usecase
 
 import (
+	"devper/app/featues/user/form"
+	"devper/app/featues/user/repository"
+	"devper/middlewares"
+	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/featues/user/repository"
-	"mgo-gin/middlewares"
-	"mgo-gin/utils/constant"
 	"net/http"
+	"time"
 )
 
 func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userId := ctx.GetString("UserId")
-		user, code, err := userEntity.GetUserById(userId)
+		userRefId := ctx.GetString("UserRefId")
+		user, err := userEntity.GetUserByRefId(userRefId)
 		if err != nil {
-			ctx.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		if user.Status != constant.ACTIVE {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not active"})
+
+		expirationTime := time.Now().Add(24 * time.Hour)
+		ref := form.Reference{
+			UserId:      user.Id,
+			Objective:   constant.AccessApi,
+			Channel:     "USERNAME",
+			ChannelInfo: user.Username,
+			ExpireDate:  expirationTime,
+			Status:      constant.ACTIVE,
+		}
+		userRef, err := userEntity.CreateVerification(ref)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		token := middlewares.GenerateJwtToken(*user)
-		response := gin.H{
+		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, expirationTime)
+		result := gin.H{
 			"accessToken": token,
 		}
-		ctx.JSON(code, response)
+		ctx.JSON(http.StatusOK, result)
 	}
 }

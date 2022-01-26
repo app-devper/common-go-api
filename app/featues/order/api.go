@@ -1,37 +1,68 @@
 package order
 
 import (
+	"devper/app/core"
+	"devper/app/featues/order/form"
+	"devper/app/featues/order/repository"
+	repository2 "devper/app/featues/product/repository"
+	"devper/middlewares"
+	"devper/utils/constant"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"mgo-gin/app/core"
-	"mgo-gin/app/featues/order/form"
-	"mgo-gin/app/featues/order/repository"
-	repository2 "mgo-gin/app/featues/product/repository"
-	"mgo-gin/db"
-	"mgo-gin/middlewares"
-	"mgo-gin/utils/constant"
 	"net/http"
 	"time"
 )
 
-func ApplyOrderAPI(app *gin.RouterGroup, resource *db.Resource) {
-	orderEntity := repository.NewOrderEntity(resource)
-	productEntity := repository2.NewProductEntity(resource)
+func ApplyOrderAPI(app *gin.RouterGroup, orderEntity repository.IOrder, productEntity repository2.IProduct) {
 	orderRoute := app.Group("order")
 
-	orderRoute.POST("", createOrder(orderEntity, productEntity))
-	orderRoute.GET("", getOrderRange(orderEntity))
-	orderRoute.GET("/:orderId", getOrderById(orderEntity))
-	orderRoute.DELETE("/:orderId", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), deleteOrderById(orderEntity, productEntity))
-	orderRoute.GET("/:orderId/total-cost", middlewares.RequireAuthenticated(), updateTotalCost(orderEntity, productEntity))
+	orderRoute.POST("",
+		createOrder(orderEntity, productEntity),
+	)
 
-	orderRoute.GET("/item", getOrderItemRange(orderEntity))
-	orderRoute.GET("/item/:itemId", getOrderItemById(orderEntity))
-	orderRoute.DELETE("/item/:itemId", middlewares.RequireAuthenticated(), middlewares.RequireAuthorization(constant.ADMIN), deleteOrderItemById(orderEntity, productEntity))
+	orderRoute.GET("",
+		getOrderRange(orderEntity),
+	)
 
-	orderRoute.GET("/product/:productId", middlewares.RequireAuthenticated(), getOrderItemByProductId(orderEntity))
+	orderRoute.GET("/:orderId",
+		getOrderById(orderEntity),
+	)
 
-	orderRoute.DELETE("/:orderId/product/:productId", middlewares.RequireAuthenticated(), deleteOrderItemByOrderProductId(orderEntity, productEntity))
+	orderRoute.DELETE("/:orderId",
+		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
+		deleteOrderById(orderEntity, productEntity),
+	)
+
+	orderRoute.GET("/:orderId/total-cost",
+		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
+		updateTotalCost(orderEntity, productEntity),
+	)
+
+	orderRoute.GET("/item",
+		getOrderItemRange(orderEntity),
+	)
+
+	orderRoute.GET("/item/:itemId",
+		getOrderItemById(orderEntity),
+	)
+
+	orderRoute.DELETE("/item/:itemId",
+		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthorization(constant.ADMIN),
+		deleteOrderItemById(orderEntity, productEntity),
+	)
+
+	orderRoute.GET("/product/:productId",
+		middlewares.RequireAuthenticated(),
+		getOrderItemByProductId(orderEntity),
+	)
+
+	orderRoute.DELETE("/:orderId/product/:productId",
+		middlewares.RequireAuthenticated(),
+		deleteOrderItemByOrderProductId(orderEntity, productEntity),
+	)
 
 }
 
