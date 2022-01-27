@@ -6,28 +6,14 @@ import (
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
 )
 
 func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userRefId := ctx.GetString("UserRefId")
-		userRef, err := userEntity.GetVerificationById(userRefId)
+		verifyId := ctx.GetString("verifyId")
+		user, err := userEntity.GetUserByRefId(verifyId, constant.SetPassword)
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if userRef.Objective != constant.SetPassword {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong objective"})
-			return
-		}
-		if userRef.ExpireDate.Before(time.Now()) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "token invalid"})
-			return
-		}
-		user, err := userEntity.GetUserById(userRef.UserId.Hex())
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.SetPassword{}
@@ -41,7 +27,7 @@ func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		_, _ = userEntity.RevokeVerification(userRefId)
+		_, _ = userEntity.RevokeVerification(verifyId)
 		ctx.JSON(http.StatusOK, result)
 	}
 }

@@ -20,7 +20,7 @@ type Claims struct {
 }
 
 type ActionClaims struct {
-	UserRefId string `json:"userRefId"`
+	VerifyId string `json:"verifyId"`
 	jwt.StandardClaims
 }
 
@@ -32,21 +32,6 @@ func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) s
 			ExpiresAt: expirationTime.Unix(),
 			Audience:  "user",
 			Issuer:    "uit",
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		logrus.Error(err)
-	}
-	return tokenString
-}
-
-func GenerateActionToken(userRefId string, expirationTime time.Time) string {
-	claims := &ActionClaims{
-		UserRefId: userRefId,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -76,7 +61,7 @@ func RequireAuthenticated() gin.HandlerFunc {
 		if err != nil {
 			logrus.Error(err)
 		}
-		if tkn == nil || !tkn.Valid {
+		if tkn == nil || !tkn.Valid || claims.UserRefId == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid authorization header"})
 			return
 		}
@@ -85,6 +70,21 @@ func RequireAuthenticated() gin.HandlerFunc {
 		logrus.Info("UserRefId: " + claims.UserRefId)
 		return
 	}
+}
+
+func GenerateActionToken(verifyId string, expirationTime time.Time) string {
+	claims := &ActionClaims{
+		VerifyId: verifyId,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		logrus.Error(err)
+	}
+	return tokenString
 }
 
 func RequireActionToken() gin.HandlerFunc {
@@ -105,8 +105,8 @@ func RequireActionToken() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid action token header"})
 			return
 		}
-		c.Set("UserRefId", claims.UserRefId)
-		logrus.Info("UserRefId: " + claims.UserRefId)
+		c.Set("verifyId", claims.VerifyId)
+		logrus.Info("VerifyId: " + claims.VerifyId)
 		return
 	}
 }

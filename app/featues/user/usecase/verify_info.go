@@ -8,7 +8,7 @@ import (
 
 func GetVerifyInfo(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userRefId := ctx.GetString("UserRefId")
+		userRefId := ctx.GetString("verifyId")
 		userRef, _ := userEntity.GetVerificationById(userRefId)
 		if userRef == nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "User ref invalid"})

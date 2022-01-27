@@ -3,6 +3,7 @@ package usecase
 import (
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
+	"devper/utils/constant"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ import (
 func AddUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRefId := ctx.GetString("UserRefId")
-		user, err := userEntity.GetUserByRefId(userRefId)
+		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return

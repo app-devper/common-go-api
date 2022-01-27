@@ -13,7 +13,7 @@ import (
 func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRefId := ctx.GetString("UserRefId")
-		user, err := userEntity.GetUserByRefId(userRefId)
+		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return

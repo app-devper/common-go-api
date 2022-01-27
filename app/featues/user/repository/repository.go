@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
@@ -35,9 +36,8 @@ type IUser interface {
 	UpdateStatusById(id string, form form.UpdateStatus) (*model.User, error)
 	UpdateRoleById(id string, form form.UpdateRole) (*model.User, error)
 	ChangePassword(id string, form form.ChangePassword) (*model.User, error)
-	GetUserByRefId(userRefId string) (*model.User, error)
-
 	SetPassword(id string, form form.SetPassword) (*model.User, error)
+	GetUserByRefId(userRefId string, objective string) (*model.User, error)
 	CreateVerification(form form.Reference) (*model.UserReference, error)
 	UpdateVerification(form form.VerifyChannel, expireTime time.Time) (*model.UserReference, error)
 	ActiveVerification(userRefId string, expireTime time.Time) (*model.UserReference, error)
@@ -70,13 +70,16 @@ func (entity *userEntity) CreateIndex() (string, error) {
 	return ind, err
 }
 
-func (entity *userEntity) GetUserByRefId(userRefId string) (*model.User, error) {
+func (entity *userEntity) GetUserByRefId(userRefId string, objective string) (*model.User, error) {
 	logrus.Info("GetUserByRefId")
 	userRef, _ := entity.GetVerificationById(userRefId)
 	if userRef == nil {
 		return nil, errors.New("user ref invalid")
 	}
-	if userRef.Objective != constant.AccessApi {
+	if userRef.Status != constant.ACTIVE {
+		return nil, errors.New("user ref not active")
+	}
+	if userRef.Objective != objective {
 		return nil, errors.New("wrong objective")
 	}
 	if userRef.ExpireDate.Before(time.Now()) {
@@ -121,7 +124,7 @@ func (entity *userEntity) GetUserByUsername(username string) (*model.User, error
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var user model.User
-	err := entity.userRepo.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	err := entity.userRepo.FindOne(ctx, bson.M{"username": strings.TrimSpace(username)}).Decode(&user)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
@@ -443,6 +446,7 @@ func (entity *userEntity) RevokeVerification(userRefId string) (*model.UserRefer
 	}
 	return &reference, nil
 }
+
 func (entity *userEntity) RemoveVerificationObjective(objective string) error {
 	logrus.Info("RemoveVerificationObjective")
 	ctx, cancel := core.InitContext()
