@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/notification/form"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -16,7 +16,7 @@ func NotifyMessage() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		result, err := core.NotifyMassage(request.Message)
+		result, err := utils.NotifyMassage(request.Message)
 		if err != nil {
 			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -1,10 +1,10 @@
 package product
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/product/repository"
 	"devper/app/featues/product/usecase"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 )
 

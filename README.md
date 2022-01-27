@@ -18,6 +18,7 @@ Rest API with Golang, MongoDB
   - PORT = "8585" or your port
   - MONGO_HOST = "your host/ localhost:27017"
   - MONGO_DB_NAME = "your db name"
+  - SECRET_KEY = "your secret key"
 
 # Run
 * `go mod download` for download dependencies

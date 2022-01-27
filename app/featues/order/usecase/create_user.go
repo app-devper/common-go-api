@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/order/form"
 	"devper/app/featues/order/repository"
 	repository2 "devper/app/featues/product/repository"
@@ -37,8 +37,8 @@ func CreateOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 		}
 
 		if request.Message != "" {
-			date := core.ToFormat(result.CreatedDate)
-			_, _ = core.NotifyMassage("รายการวันที่ " + date + "\n\n" + request.Message)
+			date := utils.ToFormat(result.CreatedDate)
+			_, _ = utils.NotifyMassage("รายการวันที่ " + date + "\n\n" + request.Message)
 		}
 
 		ctx.JSON(http.StatusOK, result)

@@ -1,11 +1,11 @@
 package order
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/order/repository"
 	"devper/app/featues/order/usecase"
 	repository2 "devper/app/featues/product/repository"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 )
 

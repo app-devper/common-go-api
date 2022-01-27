@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"devper/app/core"
+	"devper/app/core/constant"
+	"devper/app/core/utils"
 	"devper/app/featues/order/form"
 	"devper/app/featues/order/model"
 	"devper/db"
-	"devper/utils/constant"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -59,7 +59,7 @@ func NewOrderEntity(resource *db.Resource) IOrder {
 
 func (entity *orderEntity) CreateOrder(form form.Order) (*model.Order, error) {
 	logrus.Info("CreateOrder")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var orderId = primitive.NewObjectID()
@@ -121,7 +121,7 @@ func (entity *orderEntity) CreateOrder(form form.Order) (*model.Order, error) {
 
 func (entity *orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order, error) {
 	logrus.Info("GetOrderRange")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var items []model.Order
@@ -151,7 +151,7 @@ func (entity *orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order
 
 func (entity *orderEntity) UpdateTotal() ([]model.Order, error) {
 	logrus.Info("UpdateTotal")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var items []model.Order
 	cursor, err := entity.orderRepo.Find(ctx, bson.M{})
@@ -188,7 +188,7 @@ func (entity *orderEntity) UpdateTotal() ([]model.Order, error) {
 
 func (entity *orderEntity) GetOrderById(id string) (*model.Order, error) {
 	logrus.Info("GetOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Order
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -201,7 +201,7 @@ func (entity *orderEntity) GetOrderById(id string) (*model.Order, error) {
 
 func (entity *orderEntity) UpdateTotalCostOrderById(id string, totalCost float64) (*model.Order, error) {
 	logrus.Info("UpdateTotalCostOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	data, err := entity.GetOrderById(id)
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -225,7 +225,7 @@ func (entity *orderEntity) UpdateTotalCostOrderById(id string, totalCost float64
 
 func (entity *orderEntity) GetOrderDetailById(id string) (*model.OrderDetail, error) {
 	logrus.Info("GetOrderDetailById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.OrderDetail
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -251,7 +251,7 @@ func (entity *orderEntity) GetOrderDetailById(id string) (*model.OrderDetail, er
 
 func (entity *orderEntity) RemoveOrderById(id string) (*model.OrderDetail, error) {
 	logrus.Info("RemoveOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var data model.OrderDetail
@@ -277,7 +277,7 @@ func (entity *orderEntity) RemoveOrderById(id string) (*model.OrderDetail, error
 
 func (entity *orderEntity) UpdateTotalOrderById(id string) (*model.Order, error) {
 	logrus.Info("UpdateTotalOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var data model.Order
@@ -304,7 +304,7 @@ func (entity *orderEntity) UpdateTotalOrderById(id string) (*model.Order, error)
 
 func (entity *orderEntity) GetTotalOrderById(orderId string) float64 {
 	logrus.Info("GetTotalOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	defer cancel()
 	pipeline := []bson.M{
@@ -334,7 +334,7 @@ func (entity *orderEntity) GetTotalOrderById(orderId string) float64 {
 
 func (entity *orderEntity) GetTotalCostOrderById(orderId string) float64 {
 	logrus.Info("GetTotalCostOrderById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	defer cancel()
 	pipeline := []bson.M{
@@ -364,7 +364,7 @@ func (entity *orderEntity) GetTotalCostOrderById(orderId string) float64 {
 
 func (entity *orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemRange")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, []bson.M{
 		{
@@ -407,7 +407,7 @@ func (entity *orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.O
 
 func (entity *orderEntity) GetOrderItemById(id string) (*model.OrderItem, error) {
 	logrus.Info("GetOrderItemById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.OrderItem
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -420,7 +420,7 @@ func (entity *orderEntity) GetOrderItemById(id string) (*model.OrderItem, error)
 
 func (entity *orderEntity) UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, error) {
 	logrus.Info("UpdateOrderItemById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	data, err := entity.GetOrderItemById(id)
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -447,7 +447,7 @@ func (entity *orderEntity) UpdateOrderItemById(id string, form form.OrderItem) (
 
 func (entity *orderEntity) RemoveOrderItemById(id string) (*model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	item, err := entity.GetOrderItemDetailById(id)
@@ -463,7 +463,7 @@ func (entity *orderEntity) RemoveOrderItemById(id string) (*model.OrderItemDetai
 
 func (entity *orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemDetailById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, []bson.M{
@@ -504,7 +504,7 @@ func (entity *orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDe
 
 func (entity *orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemByOrderId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, []bson.M{
@@ -546,7 +546,7 @@ func (entity *orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.
 
 func (entity *orderEntity) GetOrderItemDetailByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemDetailByOrderProductId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	productObjId, _ := primitive.ObjectIDFromHex(productId)
@@ -590,7 +590,7 @@ func (entity *orderEntity) GetOrderItemDetailByOrderProductId(orderId string, pr
 
 func (entity *orderEntity) GetOrderItemByProductId(productId string) ([]model.OrderItem, error) {
 	logrus.Info("GetOrderItemByProductId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(productId)
 	cursor, err := entity.orderItemRepo.Find(ctx, bson.M{
@@ -619,7 +619,7 @@ func (entity *orderEntity) GetOrderItemByProductId(productId string) ([]model.Or
 
 func (entity *orderEntity) RemoveOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemByOrderId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	items, err := entity.GetOrderItemDetailByOrderId(orderId)
@@ -635,7 +635,7 @@ func (entity *orderEntity) RemoveOrderItemByOrderId(orderId string) ([]model.Ord
 
 func (entity *orderEntity) RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemByOrderProductId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	productObjId, _ := primitive.ObjectIDFromHex(productId)
@@ -652,7 +652,7 @@ func (entity *orderEntity) RemoveOrderItemByOrderProductId(orderId string, produ
 
 func (entity *orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, error) {
 	logrus.Info("GetPaymentByOrderId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Payment
 	objId, _ := primitive.ObjectIDFromHex(orderId)
@@ -665,7 +665,7 @@ func (entity *orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, 
 
 func (entity *orderEntity) RemovePaymentByOrderId(orderId string) (*model.Payment, error) {
 	logrus.Info("RemovePaymentByOrderId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Payment
 	objId, _ := primitive.ObjectIDFromHex(orderId)

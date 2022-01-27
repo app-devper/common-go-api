@@ -1,8 +1,8 @@
 package usecase
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/user/repository"
-	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"

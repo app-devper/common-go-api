@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/product/form"
 	"devper/app/featues/product/model"
 	"devper/db"
@@ -49,7 +49,7 @@ func NewProductEntity(resource *db.Resource) IProduct {
 }
 
 func (entity *productEntity) CreateIndex() (string, error) {
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	mod := mongo.IndexModel{
 		Keys: bson.M{
@@ -63,7 +63,7 @@ func (entity *productEntity) CreateIndex() (string, error) {
 
 func (entity *productEntity) GetProductAll() ([]model.Product, error) {
 	logrus.Info("GetProductAll")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var products []model.Product
 	cursor, err := entity.productRepo.Find(ctx, bson.M{})
@@ -88,7 +88,7 @@ func (entity *productEntity) GetProductAll() ([]model.Product, error) {
 
 func (entity *productEntity) GetProductBySerialNumber(serialNumber string) (*model.Product, error) {
 	logrus.Info("GetProductBySerialNumber")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Product
 	err := entity.productRepo.FindOne(ctx, bson.M{"serialNumber": serialNumber}).Decode(&data)
@@ -100,7 +100,7 @@ func (entity *productEntity) GetProductBySerialNumber(serialNumber string) (*mod
 
 func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, error) {
 	logrus.Info("CreateProduct")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	serialNumber := strings.TrimSpace(form.SerialNumber)
 	data, _ := entity.GetProductBySerialNumber(serialNumber)
@@ -155,7 +155,7 @@ func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, e
 
 func (entity *productEntity) GetProductById(id string) (*model.Product, error) {
 	logrus.Info("GetProductById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Product
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -168,7 +168,7 @@ func (entity *productEntity) GetProductById(id string) (*model.Product, error) {
 
 func (entity *productEntity) RemoveProductById(id string) (*model.Product, error) {
 	logrus.Info("RemoveProductById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Product
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -186,7 +186,7 @@ func (entity *productEntity) RemoveProductById(id string) (*model.Product, error
 
 func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduct) (*model.Product, error) {
 	logrus.Info("UpdateProductById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	data, err := entity.GetProductById(id)
@@ -215,7 +215,7 @@ func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduc
 
 func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model.Product, error) {
 	logrus.Info("RemoveQuantityById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 
@@ -239,7 +239,7 @@ func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model
 
 func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Product, error) {
 	logrus.Info("AddQuantityById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	data, err := entity.GetProductById(id)
@@ -270,7 +270,7 @@ func (entity *productEntity) GetTotalCostPrice(id string, quantity int) float64 
 
 func (entity *productEntity) CreateLot(productId string, form form.Product) (*model.ProductLot, error) {
 	logrus.Info("CreateLot")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	data := model.ProductLot{}
 	data.Id = primitive.NewObjectID()
@@ -291,7 +291,7 @@ func (entity *productEntity) CreateLot(productId string, form form.Product) (*mo
 func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.ProductLot, error) {
 	logrus.Info("GetLotAllByProductId")
 	var productLots []model.ProductLot
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(productId)
 	cursor, err := entity.lotRepo.Find(ctx, bson.M{"productId": objId})
@@ -316,7 +316,7 @@ func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.Pro
 
 func (entity *productEntity) GetLotById(id string) (*model.ProductLot, error) {
 	logrus.Info("GetLotById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.ProductLot
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -329,7 +329,7 @@ func (entity *productEntity) GetLotById(id string) (*model.ProductLot, error) {
 
 func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, error) {
 	logrus.Info("UpdateLotById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	data, err := entity.GetLotById(id)

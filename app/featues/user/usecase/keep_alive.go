@@ -1,10 +1,11 @@
 package usecase
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
+	"devper/config"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -21,7 +22,7 @@ func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 
-		expirationTime := time.Now().Add(24 * time.Hour)
+		expirationTime := time.Now().Add(config.AccessTokenTime)
 		ref := form.Reference{
 			UserId:      user.Id,
 			Objective:   constant.AccessApi,

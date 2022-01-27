@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/notification/form"
 	"devper/app/featues/notification/model"
 	"devper/db"
@@ -32,7 +32,7 @@ func NewNotificationEntity(resource *db.Resource) INotification {
 
 func (entity *notificationEntity) Subscription(form form.Subscription) (*model.Subscription, error) {
 	logrus.Info("Subscription")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	userId, _ := primitive.ObjectIDFromHex(form.UserId)
 	subscription := model.Subscription{
@@ -64,7 +64,7 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 
 func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscription, error) {
 	logrus.Info("GetOneByUserId")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(userId)
 	var user model.Subscription

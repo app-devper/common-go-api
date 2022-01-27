@@ -1,10 +1,10 @@
 package usecase
 
 import (
-	"devper/app/core/bcrypt"
+	"devper/app/core/constant"
+	"devper/app/core/utils"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
-	"devper/utils/constant"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -27,7 +27,7 @@ func ChangePassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.OldPassword, user.Password) != nil {
+		if (user == nil) || utils.ComparePasswordAndHashedPassword(userRequest.OldPassword, user.Password) != nil {
 			err = errors.New("wrong password")
 			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

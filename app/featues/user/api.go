@@ -1,10 +1,10 @@
 package user
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/user/repository"
 	"devper/app/featues/user/usecase"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
 )
 

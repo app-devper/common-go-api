@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/order/repository"
 	repository2 "devper/app/featues/product/repository"
 	"github.com/gin-gonic/gin"
@@ -29,8 +29,8 @@ func DeleteOrderItemByOrderProductId(orderEntity repository.IOrder, productEntit
 
 		_, _ = productEntity.AddQuantityById(productId, result.Quantity)
 
-		date := core.ToFormat(result.CreatedDate)
-		_, _ = core.NotifyMassage("ยกเลิกสินค้ารายการวันที่ " + date + "\n\n1. " + result.GetMessage())
+		date := utils.ToFormat(result.CreatedDate)
+		_, _ = utils.NotifyMassage("ยกเลิกสินค้ารายการวันที่ " + date + "\n\n1. " + result.GetMessage())
 
 		ctx.JSON(http.StatusOK, result)
 	}

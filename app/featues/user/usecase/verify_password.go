@@ -1,11 +1,12 @@
 package usecase
 
 import (
-	"devper/app/core/bcrypt"
+	"devper/app/core/constant"
+	"devper/app/core/utils"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
+	"devper/config"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -28,14 +29,14 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
+		if (user == nil) || utils.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
 			logrus.Error(err)
 			err = errors.New("wrong password")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		_ = userEntity.RemoveVerificationObjective(userRequest.Objective)
-		expirationTime := time.Now().Add(3 * time.Minute)
+		expirationTime := time.Now().Add(config.ActionTokenTime)
 		ref := form.Reference{
 			UserId:      user.Id,
 			Objective:   userRequest.Objective,

@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/order/repository"
 	repository2 "devper/app/featues/product/repository"
 	"fmt"
@@ -29,8 +29,8 @@ func DeleteOrderById(orderEntity repository.IOrder, productEntity repository2.IP
 		}
 		message += fmt.Sprintf("\nรวม %.2f บาท", result.Total)
 
-		date := core.ToFormat(result.CreatedDate)
-		_, _ = core.NotifyMassage("ยกเลิกรายการวันที่ " + date + "\n\n" + message)
+		date := utils.ToFormat(result.CreatedDate)
+		_, _ = utils.NotifyMassage("ยกเลิกรายการวันที่ " + date + "\n\n" + message)
 
 		ctx.JSON(http.StatusOK, result)
 	}

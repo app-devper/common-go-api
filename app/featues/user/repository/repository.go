@@ -1,12 +1,11 @@
 package repository
 
 import (
-	"devper/app/core"
-	bcrypt2 "devper/app/core/bcrypt"
+	"devper/app/core/constant"
+	"devper/app/core/utils"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/model"
 	"devper/db"
-	"devper/utils/constant"
 	"errors"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,7 +54,7 @@ func NewUserEntity(resource *db.Resource) IUser {
 }
 
 func (entity *userEntity) CreateIndex() (string, error) {
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	mod := mongo.IndexModel{
 		Keys: bson.M{
@@ -95,7 +94,7 @@ func (entity *userEntity) GetUserByRefId(userRefId string, objective string) (*m
 func (entity *userEntity) GetUserAll() ([]model.User, error) {
 	logrus.Info("GetUserAll")
 	var usersList []model.User
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	cursor, err := entity.userRepo.Find(ctx, bson.M{})
 	if err != nil {
@@ -119,7 +118,7 @@ func (entity *userEntity) GetUserAll() ([]model.User, error) {
 
 func (entity *userEntity) GetUserByUsername(username string) (*model.User, error) {
 	logrus.Info("GetUserByUsername")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var user model.User
 	err := entity.userRepo.FindOne(ctx, bson.M{"username": strings.TrimSpace(username)}).Decode(&user)
@@ -134,7 +133,7 @@ func (entity *userEntity) GetUserByUsername(username string) (*model.User, error
 
 func (entity *userEntity) CreateUser(form form.User) (*model.User, error) {
 	logrus.Info("CreateUser")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var userId = primitive.NewObjectID()
@@ -147,7 +146,7 @@ func (entity *userEntity) CreateUser(form form.User) (*model.User, error) {
 		FirstName:   form.FirstName,
 		LastName:    form.LastName,
 		Username:    form.Username,
-		Password:    bcrypt2.HashPassword(form.Password),
+		Password:    utils.HashPassword(form.Password),
 		Role:        constant.USER,
 		Status:      constant.ACTIVE,
 		CreatedBy:   createdBy,
@@ -164,7 +163,7 @@ func (entity *userEntity) CreateUser(form form.User) (*model.User, error) {
 
 func (entity *userEntity) GetUserById(id string) (*model.User, error) {
 	logrus.Info("GetUserById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var user model.User
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -177,7 +176,7 @@ func (entity *userEntity) GetUserById(id string) (*model.User, error) {
 
 func (entity *userEntity) RemoveUserById(id string) (*model.User, error) {
 	logrus.Info("RemoveUserById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var user model.User
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -194,7 +193,7 @@ func (entity *userEntity) RemoveUserById(id string) (*model.User, error) {
 
 func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*model.User, error) {
 	logrus.Info("UpdateUserById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
@@ -221,7 +220,7 @@ func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*mode
 
 func (entity *userEntity) UpdateStatusById(id string, form form.UpdateStatus) (*model.User, error) {
 	logrus.Info("UpdateStatusById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
@@ -245,7 +244,7 @@ func (entity *userEntity) UpdateStatusById(id string, form form.UpdateStatus) (*
 
 func (entity *userEntity) UpdateRoleById(id string, form form.UpdateRole) (*model.User, error) {
 	logrus.Info("UpdateRoleById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
@@ -270,14 +269,14 @@ func (entity *userEntity) UpdateRoleById(id string, form form.UpdateRole) (*mode
 
 func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*model.User, error) {
 	logrus.Info("ChangePassword")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
 		return nil, err
 	}
-	user.Password = bcrypt2.HashPassword(form.NewPassword)
+	user.Password = utils.HashPassword(form.NewPassword)
 	user.UpdatedBy = objId
 	user.UpdatedDate = time.Now()
 	isReturnNewDoc := options.After
@@ -293,14 +292,14 @@ func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*
 
 func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.User, error) {
 	logrus.Info("SetPassword")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
 		return nil, err
 	}
-	user.Password = bcrypt2.HashPassword(form.Password)
+	user.Password = utils.HashPassword(form.Password)
 	user.UpdatedBy = objId
 	user.UpdatedDate = time.Now()
 	isReturnNewDoc := options.After
@@ -316,7 +315,7 @@ func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.
 
 func (entity *userEntity) CreateVerification(form form.Reference) (*model.UserReference, error) {
 	logrus.Info("CreateVerification")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 
 	var userRefId = primitive.NewObjectID()
@@ -339,7 +338,7 @@ func (entity *userEntity) CreateVerification(form form.Reference) (*model.UserRe
 
 func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime time.Time) (*model.UserReference, error) {
 	logrus.Info("UpdateVerification")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var reference model.UserReference
 	objId, _ := primitive.ObjectIDFromHex(form.UserRefId)
@@ -349,8 +348,8 @@ func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime
 	}
 	reference.Channel = form.Channel
 	reference.ChannelInfo = form.ChannelInfo
-	reference.Code, _ = bcrypt2.GenerateCode(6)
-	reference.RefId, _ = bcrypt2.GenerateRefId(4)
+	reference.Code, _ = utils.GenerateCode(6)
+	reference.RefId, _ = utils.GenerateRefId(4)
 	reference.ExpireDate = expireTime
 	reference.ValidPeriod = 5
 	isReturnNewDoc := options.After
@@ -366,7 +365,7 @@ func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime
 
 func (entity *userEntity) ActiveVerification(userRefId string, expireTime time.Time) (*model.UserReference, error) {
 	logrus.Info("ActiveVerification")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var reference model.UserReference
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
@@ -389,7 +388,7 @@ func (entity *userEntity) ActiveVerification(userRefId string, expireTime time.T
 
 func (entity *userEntity) GetVerificationById(userRefId string) (*model.UserReference, error) {
 	logrus.Info("GetVerificationById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var reference model.UserReference
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
@@ -402,7 +401,7 @@ func (entity *userEntity) GetVerificationById(userRefId string) (*model.UserRefe
 
 func (entity *userEntity) RevokeVerification(userRefId string) (*model.UserReference, error) {
 	logrus.Info("RevokeVerification")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var reference model.UserReference
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
@@ -424,7 +423,7 @@ func (entity *userEntity) RevokeVerification(userRefId string) (*model.UserRefer
 
 func (entity *userEntity) RemoveVerificationObjective(objective string) error {
 	logrus.Info("RemoveVerificationObjective")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	_, err := entity.verifyRepo.DeleteMany(ctx, bson.M{"objective": objective})
 	if err != nil {

@@ -1,10 +1,11 @@
 package usecase
 
 import (
+	"devper/app/core/constant"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
+	"devper/config"
 	"devper/middlewares"
-	"devper/utils/constant"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ func VerifyUserCode(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		expirationTime := time.Now().Add(3 * time.Minute)
+		expirationTime := time.Now().Add(config.ActionTokenTime)
 		userRef, err = userEntity.ActiveVerification(userRequest.UserRefId, expirationTime)
 		if err != nil {
 			logrus.Error(err)

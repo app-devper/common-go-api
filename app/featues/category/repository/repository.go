@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"devper/app/core"
+	"devper/app/core/utils"
 	"devper/app/featues/category/form"
 	"devper/app/featues/category/model"
 	"devper/db"
@@ -40,7 +40,7 @@ func NewCategoryEntity(resource *db.Resource) ICategory {
 
 func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, error) {
 	logrus.Info("UpdateDefaultCategoryById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	_, err := entity.categoryRepo.UpdateMany(ctx, bson.M{}, bson.M{"$set": bson.M{
 		"default": false,
@@ -71,7 +71,7 @@ func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Catego
 
 func (entity categoryEntity) GetCategoryAll() ([]model.Category, error) {
 	logrus.Info("GetCategoryAll")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var items []model.Category
 	cursor, err := entity.categoryRepo.Find(ctx, bson.M{})
@@ -95,7 +95,7 @@ func (entity categoryEntity) GetCategoryAll() ([]model.Category, error) {
 
 func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category, error) {
 	logrus.Info("CreateCategory")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	data := model.Category{
 		Id:          primitive.NewObjectID(),
@@ -114,7 +114,7 @@ func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category
 
 func (entity categoryEntity) GetCategoryById(id string) (*model.Category, error) {
 	logrus.Info("GetCategoryById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	var data model.Category
@@ -127,7 +127,7 @@ func (entity categoryEntity) GetCategoryById(id string) (*model.Category, error)
 
 func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, error) {
 	logrus.Info("RemoveCategoryById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	var data model.Category
 	objId, _ := primitive.ObjectIDFromHex(id)
@@ -144,7 +144,7 @@ func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, err
 
 func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (*model.Category, error) {
 	logrus.Info("UpdateCategoryById")
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 	var data model.Category
@@ -169,7 +169,7 @@ func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (
 }
 
 func (entity *categoryEntity) CreateIndex() (string, error) {
-	ctx, cancel := core.InitContext()
+	ctx, cancel := utils.InitContext()
 	defer cancel()
 	mod := mongo.IndexModel{
 		Keys: bson.M{
