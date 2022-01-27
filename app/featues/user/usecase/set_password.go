@@ -5,6 +5,7 @@ import (
 	"devper/app/featues/user/repository"
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -13,17 +14,20 @@ func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 		verifyId := ctx.GetString("verifyId")
 		user, err := userEntity.GetUserByRefId(verifyId, constant.SetPassword)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.SetPassword{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		result, err := userEntity.SetPassword(user.Id.Hex(), userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

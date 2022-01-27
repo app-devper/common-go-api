@@ -15,18 +15,20 @@ func AddUser(userEntity repository.IUser) gin.HandlerFunc {
 		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.User{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		found, _ := userEntity.GetUserByUsername(userRequest.Username)
 		if found != nil {
-			err := errors.New("username is taken")
+			err = errors.New("username is taken")
 			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
@@ -34,6 +36,7 @@ func AddUser(userEntity repository.IUser) gin.HandlerFunc {
 		userRequest.CreatedBy = user.Id.Hex()
 		result, err := userEntity.CreateUser(userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

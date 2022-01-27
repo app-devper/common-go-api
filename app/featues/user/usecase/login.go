@@ -6,7 +6,9 @@ import (
 	"devper/app/featues/user/repository"
 	"devper/middlewares"
 	"devper/utils/constant"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -15,16 +17,20 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRequest := form.Login{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		user, err := userEntity.GetUserByUsername(userRequest.Username)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong username or password"})
+			err = errors.New("wrong username or password")
+			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		expirationTime := time.Now().Add(24 * time.Hour)
@@ -38,6 +44,7 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

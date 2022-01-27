@@ -50,10 +50,7 @@ func NewUserEntity(resource *db.Resource) IUser {
 	userRepo := resource.DB.Collection("users")
 	verifyRepo := resource.DB.Collection("verifications")
 	Entity = &userEntity{resource: resource, userRepo: userRepo, verifyRepo: verifyRepo}
-	_, err := Entity.CreateIndex()
-	if err != nil {
-		logrus.Error(err)
-	}
+	_, _ = Entity.CreateIndex()
 	return Entity
 }
 
@@ -102,16 +99,17 @@ func (entity *userEntity) GetUserAll() ([]model.User, error) {
 	defer cancel()
 	cursor, err := entity.userRepo.Find(ctx, bson.M{})
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	for cursor.Next(ctx) {
 		var user model.User
 		err = cursor.Decode(&user)
-		if err != nil {
+		if err == nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			usersList = append(usersList, user)
 		}
-		usersList = append(usersList, user)
 	}
 	if usersList == nil {
 		usersList = []model.User{}
@@ -126,7 +124,6 @@ func (entity *userEntity) GetUserByUsername(username string) (*model.User, error
 	var user model.User
 	err := entity.userRepo.FindOne(ctx, bson.M{"username": strings.TrimSpace(username)}).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	if user.Status != constant.ACTIVE {
@@ -160,7 +157,6 @@ func (entity *userEntity) CreateUser(form form.User) (*model.User, error) {
 	}
 	_, err := entity.userRepo.InsertOne(ctx, user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &user, nil
@@ -174,7 +170,6 @@ func (entity *userEntity) GetUserById(id string) (*model.User, error) {
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.userRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &user, nil
@@ -188,12 +183,10 @@ func (entity *userEntity) RemoveUserById(id string) (*model.User, error) {
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.userRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	_, err = entity.userRepo.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &user, nil
@@ -206,7 +199,6 @@ func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*mode
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	user.FirstName = form.FirstName
@@ -222,7 +214,6 @@ func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*mode
 	}
 	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return user, nil
@@ -235,7 +226,6 @@ func (entity *userEntity) UpdateStatusById(id string, form form.UpdateStatus) (*
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	user.Status = form.Status
@@ -248,7 +238,6 @@ func (entity *userEntity) UpdateStatusById(id string, form form.UpdateStatus) (*
 	}
 	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return user, nil
@@ -261,7 +250,6 @@ func (entity *userEntity) UpdateRoleById(id string, form form.UpdateRole) (*mode
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 
@@ -275,7 +263,6 @@ func (entity *userEntity) UpdateRoleById(id string, form form.UpdateRole) (*mode
 	}
 	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return user, nil
@@ -288,7 +275,6 @@ func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	user.Password = bcrypt2.HashPassword(form.NewPassword)
@@ -300,7 +286,6 @@ func (entity *userEntity) ChangePassword(id string, form form.ChangePassword) (*
 	}
 	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return user, nil
@@ -313,7 +298,6 @@ func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.
 	objId, _ := primitive.ObjectIDFromHex(id)
 	user, err := entity.GetUserById(id)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	user.Password = bcrypt2.HashPassword(form.Password)
@@ -325,7 +309,6 @@ func (entity *userEntity) SetPassword(id string, form form.SetPassword) (*model.
 	}
 	err = entity.userRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": user}, opts).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return user, nil
@@ -349,7 +332,6 @@ func (entity *userEntity) CreateVerification(form form.Reference) (*model.UserRe
 	}
 	_, err := entity.verifyRepo.InsertOne(ctx, reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &reference, nil
@@ -363,7 +345,6 @@ func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime
 	objId, _ := primitive.ObjectIDFromHex(form.UserRefId)
 	err := entity.verifyRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	reference.Channel = form.Channel
@@ -378,7 +359,6 @@ func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime
 	}
 	err = entity.verifyRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": reference}, opts).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &reference, nil
@@ -392,7 +372,6 @@ func (entity *userEntity) ActiveVerification(userRefId string, expireTime time.T
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
 	err := entity.verifyRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	reference.Status = constant.ACTIVE
@@ -403,7 +382,6 @@ func (entity *userEntity) ActiveVerification(userRefId string, expireTime time.T
 	}
 	err = entity.verifyRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": reference}, opts).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &reference, nil
@@ -417,7 +395,6 @@ func (entity *userEntity) GetVerificationById(userRefId string) (*model.UserRefe
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
 	err := entity.verifyRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &reference, nil
@@ -431,7 +408,6 @@ func (entity *userEntity) RevokeVerification(userRefId string) (*model.UserRefer
 	objId, _ := primitive.ObjectIDFromHex(userRefId)
 	err := entity.verifyRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	reference.ExpireDate = time.Now()
@@ -441,7 +417,6 @@ func (entity *userEntity) RevokeVerification(userRefId string) (*model.UserRefer
 	}
 	err = entity.verifyRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": reference}, opts).Decode(&reference)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &reference, nil
@@ -453,7 +428,6 @@ func (entity *userEntity) RemoveVerificationObjective(objective string) error {
 	defer cancel()
 	_, err := entity.verifyRepo.DeleteMany(ctx, bson.M{"objective": objective})
 	if err != nil {
-		logrus.Error(err)
 		return err
 	}
 	return nil

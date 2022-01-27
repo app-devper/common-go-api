@@ -6,6 +6,7 @@ import (
 	"devper/middlewares"
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -15,6 +16,7 @@ func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
@@ -30,6 +32,7 @@ func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

@@ -5,6 +5,7 @@ import (
 	"devper/app/featues/user/repository"
 	"devper/utils/constant"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -12,11 +13,13 @@ func VerifyUser(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRequest := form.VerifyUser{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		user, err := userEntity.GetUserByUsername(userRequest.Username)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -28,6 +31,7 @@ func VerifyUser(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

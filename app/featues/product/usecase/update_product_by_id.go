@@ -1,24 +1,22 @@
 package usecase
 
 import (
-	"devper/app/core"
-	"devper/app/featues/notification/form"
+	"devper/app/featues/product/form"
+	"devper/app/featues/product/repository"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
-func NotifyMessage() gin.HandlerFunc {
+func UpdateProductById(productEntity repository.IProduct) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		request := form.Notify{}
+		id := ctx.Param("productId")
+		request := form.UpdateProduct{}
 		if err := ctx.ShouldBind(&request); err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		result, err := core.NotifyMassage(request.Message)
+		result, err := productEntity.UpdateProductById(id, request)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

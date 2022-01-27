@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -25,20 +24,20 @@ type productEntity struct {
 
 type IProduct interface {
 	CreateIndex() (string, error)
-	GetProductAll() ([]model.Product, int, error)
-	GetProductBySerialNumber(serialNumber string) (*model.Product, int, error)
-	GetProductById(id string) (*model.Product, int, error)
-	CreateProduct(form form.Product) (*model.Product, int, error)
-	RemoveProductById(id string) (*model.Product, int, error)
-	UpdateProductById(id string, form form.UpdateProduct) (*model.Product, int, error)
-	RemoveQuantityById(id string, quantity int) (*model.Product, int, error)
-	AddQuantityById(id string, quantity int) (*model.Product, int, error)
+	GetProductAll() ([]model.Product, error)
+	GetProductBySerialNumber(serialNumber string) (*model.Product, error)
+	GetProductById(id string) (*model.Product, error)
+	CreateProduct(form form.Product) (*model.Product, error)
+	RemoveProductById(id string) (*model.Product, error)
+	UpdateProductById(id string, form form.UpdateProduct) (*model.Product, error)
+	RemoveQuantityById(id string, quantity int) (*model.Product, error)
+	AddQuantityById(id string, quantity int) (*model.Product, error)
 	GetTotalCostPrice(id string, quantity int) float64
 
-	CreateLot(productId string, form form.Product) (*model.ProductLot, int, error)
-	GetLotAllByProductId(productId string) ([]model.ProductLot, int, error)
-	GetLotById(id string) (*model.ProductLot, int, error)
-	UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, int, error)
+	CreateLot(productId string, form form.Product) (*model.ProductLot, error)
+	GetLotAllByProductId(productId string) ([]model.ProductLot, error)
+	GetLotById(id string) (*model.ProductLot, error)
+	UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, error)
 }
 
 func NewProductEntity(resource *db.Resource) IProduct {
@@ -62,50 +61,49 @@ func (entity *productEntity) CreateIndex() (string, error) {
 	return ind, err
 }
 
-func (entity *productEntity) GetProductAll() ([]model.Product, int, error) {
+func (entity *productEntity) GetProductAll() ([]model.Product, error) {
 	logrus.Info("GetProductAll")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var products []model.Product
 	cursor, err := entity.productRepo.Find(ctx, bson.M{})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	for cursor.Next(ctx) {
 		var user model.Product
 		err = cursor.Decode(&user)
 		if err != nil {
 			logrus.Error(err)
-			logrus.Error(cursor.Current)
+			logrus.Info(cursor.Current)
+		} else {
+			products = append(products, user)
 		}
-		products = append(products, user)
 	}
 	if products == nil {
 		products = []model.Product{}
 	}
-	return products, http.StatusOK, nil
+	return products, nil
 }
 
-func (entity *productEntity) GetProductBySerialNumber(serialNumber string) (*model.Product, int, error) {
+func (entity *productEntity) GetProductBySerialNumber(serialNumber string) (*model.Product, error) {
 	logrus.Info("GetProductBySerialNumber")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var data model.Product
 	err := entity.productRepo.FindOne(ctx, bson.M{"serialNumber": serialNumber}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, int, error) {
+func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, error) {
 	logrus.Info("CreateProduct")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	serialNumber := strings.TrimSpace(form.SerialNumber)
-	data, _, _ := entity.GetProductBySerialNumber(serialNumber)
+	data, _ := entity.GetProductBySerialNumber(serialNumber)
 	if data != nil {
 		data.Name = form.Name
 		data.NameEn = form.NameEn
@@ -123,15 +121,13 @@ func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, i
 		}
 		err := entity.productRepo.FindOneAndUpdate(ctx, bson.M{"_id": data.Id}, bson.M{"$set": data}, opts).Decode(&data)
 		if err != nil {
-			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		_, _, err = entity.CreateLot(data.Id.Hex(), form)
+		_, err = entity.CreateLot(data.Id.Hex(), form)
 		if err != nil {
-			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		return data, http.StatusOK, nil
+		return data, nil
 	} else {
 		data := model.Product{}
 		data.Id = primitive.NewObjectID()
@@ -147,19 +143,17 @@ func (entity *productEntity) CreateProduct(form form.Product) (*model.Product, i
 		data.UpdatedDate = time.Now()
 		_, err := entity.productRepo.InsertOne(ctx, data)
 		if err != nil {
-			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		_, _, err = entity.CreateLot(data.Id.Hex(), form)
+		_, err = entity.CreateLot(data.Id.Hex(), form)
 		if err != nil {
-			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		return &data, http.StatusOK, nil
+		return &data, nil
 	}
 }
 
-func (entity *productEntity) GetProductById(id string) (*model.Product, int, error) {
+func (entity *productEntity) GetProductById(id string) (*model.Product, error) {
 	logrus.Info("GetProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -167,13 +161,12 @@ func (entity *productEntity) GetProductById(id string) (*model.Product, int, err
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.productRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity *productEntity) RemoveProductById(id string) (*model.Product, int, error) {
+func (entity *productEntity) RemoveProductById(id string) (*model.Product, error) {
 	logrus.Info("RemoveProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -181,27 +174,24 @@ func (entity *productEntity) RemoveProductById(id string) (*model.Product, int, 
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.productRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.productRepo.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, _ = entity.lotRepo.DeleteMany(ctx, bson.M{"productId": objId})
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduct) (*model.Product, int, error) {
+func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduct) (*model.Product, error) {
 	logrus.Info("UpdateProductById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetProductById(id)
+	data, err := entity.GetProductById(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 	data.Name = form.Name
 	data.NameEn = form.NameEn
@@ -218,22 +208,20 @@ func (entity *productEntity) UpdateProductById(id string, form form.UpdateProduc
 	}
 	err = entity.productRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }
 
-func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model.Product, int, error) {
+func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model.Product, error) {
 	logrus.Info("RemoveQuantityById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
 
-	data, _, err := entity.GetProductById(id)
+	data, err := entity.GetProductById(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 	data.Quantity = data.Quantity - quantity
 	data.UpdatedDate = time.Now()
@@ -244,21 +232,19 @@ func (entity *productEntity) RemoveQuantityById(id string, quantity int) (*model
 	}
 	err = entity.productRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }
 
-func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Product, int, error) {
+func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Product, error) {
 	logrus.Info("AddQuantityById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetProductById(id)
+	data, err := entity.GetProductById(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 	data.Quantity = data.Quantity + quantity
 	data.UpdatedDate = time.Now()
@@ -268,23 +254,21 @@ func (entity *productEntity) AddQuantityById(id string, quantity int) (*model.Pr
 	}
 	err = entity.productRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }
 
 func (entity *productEntity) GetTotalCostPrice(id string, quantity int) float64 {
 	logrus.Info("GetTotalCostPrice")
-	data, _, err := entity.GetProductById(id)
+	data, err := entity.GetProductById(id)
 	if err != nil {
-		logrus.Error(err)
 		return 0
 	}
 	return data.CostPrice * float64(quantity)
 }
 
-func (entity *productEntity) CreateLot(productId string, form form.Product) (*model.ProductLot, int, error) {
+func (entity *productEntity) CreateLot(productId string, form form.Product) (*model.ProductLot, error) {
 	logrus.Info("CreateLot")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -299,13 +283,12 @@ func (entity *productEntity) CreateLot(productId string, form form.Product) (*mo
 	data.UpdatedDate = time.Now()
 	_, err := entity.lotRepo.InsertOne(ctx, data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.ProductLot, int, error) {
+func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.ProductLot, error) {
 	logrus.Info("GetLotAllByProductId")
 	var productLots []model.ProductLot
 	ctx, cancel := core.InitContext()
@@ -313,24 +296,25 @@ func (entity *productEntity) GetLotAllByProductId(productId string) ([]model.Pro
 	objId, _ := primitive.ObjectIDFromHex(productId)
 	cursor, err := entity.lotRepo.Find(ctx, bson.M{"productId": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	for cursor.Next(ctx) {
 		var productLot model.ProductLot
 		err = cursor.Decode(&productLot)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			productLots = append(productLots, productLot)
 		}
-		productLots = append(productLots, productLot)
 	}
 	if productLots == nil {
 		productLots = []model.ProductLot{}
 	}
-	return productLots, http.StatusOK, nil
+	return productLots, nil
 }
 
-func (entity *productEntity) GetLotById(id string) (*model.ProductLot, int, error) {
+func (entity *productEntity) GetLotById(id string) (*model.ProductLot, error) {
 	logrus.Info("GetLotById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -338,21 +322,19 @@ func (entity *productEntity) GetLotById(id string) (*model.ProductLot, int, erro
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.lotRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, int, error) {
+func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*model.ProductLot, error) {
 	logrus.Info("UpdateLotById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	data, _, err := entity.GetLotById(id)
+	data, err := entity.GetLotById(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 
 	data.LotNumber = form.LotNumber
@@ -367,8 +349,7 @@ func (entity *productEntity) UpdateLotById(id string, form form.ProductLot) (*mo
 	}
 	err = entity.lotRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }

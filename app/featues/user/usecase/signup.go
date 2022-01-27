@@ -14,6 +14,7 @@ func SignUp(userEntity repository.IUser) gin.HandlerFunc {
 		userRequest := form.User{}
 		err := ctx.ShouldBind(&userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -26,6 +27,7 @@ func SignUp(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		result, err := userEntity.CreateUser(userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

@@ -49,7 +49,6 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 		}
 		err := entity.repo.FindOneAndUpdate(ctx, bson.M{"userId": userId}, bson.M{"$set": subscription}, opts).Decode(&subscription)
 		if err != nil {
-			logrus.Error(err)
 			return nil, err
 		}
 		return &subscription, nil
@@ -57,7 +56,6 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 		subscription.Id = primitive.NewObjectID()
 		_, err := entity.repo.InsertOne(ctx, subscription)
 		if err != nil {
-			logrus.Error(err)
 			return nil, err
 		}
 		return &subscription, nil
@@ -72,7 +70,6 @@ func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscrip
 	var user model.Subscription
 	err := entity.repo.FindOne(ctx, bson.M{"userId": objId}).Decode(&user)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &user, nil

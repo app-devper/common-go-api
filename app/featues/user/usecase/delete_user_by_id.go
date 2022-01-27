@@ -3,7 +3,9 @@ package usecase
 import (
 	"devper/app/featues/user/repository"
 	"devper/utils/constant"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -12,16 +14,20 @@ func DeleteUserById(userEntity repository.IUser) gin.HandlerFunc {
 		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		id := ctx.Param("id")
 		if user.Id.Hex() == id {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Can't delete self user"})
+			err = errors.New("can't delete self user")
+			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		result, err := userEntity.RemoveUserById(id)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

@@ -6,7 +6,9 @@ import (
 	"devper/app/featues/user/repository"
 	"devper/middlewares"
 	"devper/utils/constant"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -16,16 +18,20 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.VerifyPassword{}
-		if err := ctx.ShouldBind(&userRequest); err != nil {
+		if err = ctx.ShouldBind(&userRequest); err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.Password, user.Password) != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong password"})
+			logrus.Error(err)
+			err = errors.New("wrong password")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		_ = userEntity.RemoveVerificationObjective(userRequest.Objective)
@@ -40,6 +46,7 @@ func VerifyPassword(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

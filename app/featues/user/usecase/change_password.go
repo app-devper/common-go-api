@@ -5,7 +5,9 @@ import (
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
 	"devper/utils/constant"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -14,21 +16,26 @@ func ChangePassword(userEntity repository.IUser) gin.HandlerFunc {
 		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		userRequest := form.ChangePassword{}
 		err = ctx.ShouldBind(&userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if (user == nil) || bcrypt.ComparePasswordAndHashedPassword(userRequest.OldPassword, user.Password) != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Wrong password"})
+			err = errors.New("wrong password")
+			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		result, err := userEntity.ChangePassword(user.Id.Hex(), userRequest)
 		if err != nil {
+			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
