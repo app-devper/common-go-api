@@ -104,7 +104,7 @@ func (entity *userEntity) GetUserAll() ([]model.User, error) {
 	for cursor.Next(ctx) {
 		var user model.User
 		err = cursor.Decode(&user)
-		if err == nil {
+		if err != nil {
 			logrus.Error(err)
 			logrus.Info(cursor.Current)
 		} else {
