@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -24,12 +23,12 @@ type categoryEntity struct {
 
 type ICategory interface {
 	CreateIndex() (string, error)
-	GetCategoryAll() ([]model.Category, int, error)
-	CreateCategory(form form.Category) (*model.Category, int, error)
-	GetCategoryById(id string) (*model.Category, int, error)
-	RemoveCategoryById(id string) (*model.Category, int, error)
-	UpdateCategoryById(id string, form form.Category) (*model.Category, int, error)
-	UpdateDefaultCategoryById(id string) (*model.Category, int, error)
+	GetCategoryAll() ([]model.Category, error)
+	CreateCategory(form form.Category) (*model.Category, error)
+	GetCategoryById(id string) (*model.Category, error)
+	RemoveCategoryById(id string) (*model.Category, error)
+	UpdateCategoryById(id string, form form.Category) (*model.Category, error)
+	UpdateDefaultCategoryById(id string) (*model.Category, error)
 }
 
 func NewCategoryEntity(resource *db.Resource) ICategory {
@@ -39,7 +38,7 @@ func NewCategoryEntity(resource *db.Resource) ICategory {
 	return Entity
 }
 
-func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, int, error) {
+func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, error) {
 	logrus.Info("UpdateDefaultCategoryById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -47,16 +46,14 @@ func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Catego
 		"default": false,
 	}})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
 	objId, _ := primitive.ObjectIDFromHex(id)
 	var data model.Category
 	err = entity.categoryRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	data.Default = true
 	data.UpdatedDate = time.Now()
@@ -67,37 +64,36 @@ func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Catego
 	}
 	err = entity.categoryRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity categoryEntity) GetCategoryAll() ([]model.Category, int, error) {
+func (entity categoryEntity) GetCategoryAll() ([]model.Category, error) {
 	logrus.Info("GetCategoryAll")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var items []model.Category
 	cursor, err := entity.categoryRepo.Find(ctx, bson.M{})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	for cursor.Next(ctx) {
-		var user model.Category
-		err = cursor.Decode(&user)
+		var category model.Category
+		err = cursor.Decode(&category)
 		if err != nil {
 			logrus.Error(err)
+		} else {
+			items = append(items, category)
 		}
-		items = append(items, user)
 	}
 	if items == nil {
 		items = []model.Category{}
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category, int, error) {
+func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category, error) {
 	logrus.Info("CreateCategory")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -111,13 +107,12 @@ func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category
 	}
 	_, err := entity.categoryRepo.InsertOne(ctx, data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity categoryEntity) GetCategoryById(id string) (*model.Category, int, error) {
+func (entity categoryEntity) GetCategoryById(id string) (*model.Category, error) {
 	logrus.Info("GetCategoryById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -125,13 +120,12 @@ func (entity categoryEntity) GetCategoryById(id string) (*model.Category, int, e
 	var data model.Category
 	err := entity.categoryRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, int, error) {
+func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, error) {
 	logrus.Info("RemoveCategoryById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -139,18 +133,16 @@ func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, int
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.categoryRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.categoryRepo.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (*model.Category, int, error) {
+func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (*model.Category, error) {
 	logrus.Info("UpdateCategoryById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -158,8 +150,7 @@ func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (
 	var data model.Category
 	err := entity.categoryRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	data.Name = form.Name
 	data.Value = strings.ToUpper(form.Value)
@@ -172,10 +163,9 @@ func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (
 	}
 	err = entity.categoryRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
 func (entity *categoryEntity) CreateIndex() (string, error) {
