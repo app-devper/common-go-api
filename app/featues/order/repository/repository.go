@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"net/http"
 	"time"
 )
 
@@ -25,29 +24,29 @@ type orderEntity struct {
 }
 
 type IOrder interface {
-	CreateOrder(form form.Order) (*model.Order, int, error)
-	GetOrderRange(form form.GetOrderRange) ([]model.Order, int, error)
-	UpdateTotal() ([]model.Order, int, error)
-	GetOrderById(id string) (*model.Order, int, error)
-	GetOrderDetailById(id string) (*model.OrderDetail, int, error)
-	UpdateTotalCostOrderById(id string, totalCost float64) (*model.Order, int, error)
-	RemoveOrderById(id string) (*model.OrderDetail, int, error)
-	UpdateTotalOrderById(id string) (*model.Order, int, error)
+	CreateOrder(form form.Order) (*model.Order, error)
+	GetOrderRange(form form.GetOrderRange) ([]model.Order, error)
+	UpdateTotal() ([]model.Order, error)
+	GetOrderById(id string) (*model.Order, error)
+	GetOrderDetailById(id string) (*model.OrderDetail, error)
+	UpdateTotalCostOrderById(id string, totalCost float64) (*model.Order, error)
+	RemoveOrderById(id string) (*model.OrderDetail, error)
+	UpdateTotalOrderById(id string) (*model.Order, error)
 	GetTotalOrderById(id string) float64
 	GetTotalCostOrderById(id string) float64
 
-	GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, int, error)
-	GetOrderItemById(id string) (*model.OrderItem, int, error)
-	UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, int, error)
-	RemoveOrderItemById(id string) (*model.OrderItemDetail, int, error)
-	GetOrderItemDetailById(id string) (*model.OrderItemDetail, int, error)
-	GetOrderItemDetailByOrderId(orderId string) ([]model.OrderItemDetail, int, error)
-	GetOrderItemDetailByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error)
-	RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error)
-	GetOrderItemByProductId(productId string) ([]model.OrderItem, int, error)
+	GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, error)
+	GetOrderItemById(id string) (*model.OrderItem, error)
+	UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, error)
+	RemoveOrderItemById(id string) (*model.OrderItemDetail, error)
+	GetOrderItemDetailById(id string) (*model.OrderItemDetail, error)
+	GetOrderItemDetailByOrderId(orderId string) ([]model.OrderItemDetail, error)
+	GetOrderItemDetailByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error)
+	RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error)
+	GetOrderItemByProductId(productId string) ([]model.OrderItem, error)
 
-	GetPaymentByOrderId(orderId string) (*model.Payment, int, error)
-	RemovePaymentByOrderId(orderId string) (*model.Payment, int, error)
+	GetPaymentByOrderId(orderId string) (*model.Payment, error)
+	RemovePaymentByOrderId(orderId string) (*model.Payment, error)
 }
 
 func NewOrderEntity(resource *db.Resource) IOrder {
@@ -58,7 +57,7 @@ func NewOrderEntity(resource *db.Resource) IOrder {
 	return Entity
 }
 
-func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error) {
+func (entity *orderEntity) CreateOrder(form form.Order) (*model.Order, error) {
 	logrus.Info("CreateOrder")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -76,8 +75,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 	}
 	_, err := entity.orderRepo.InsertOne(ctx, data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
 	count := len(form.Items)
@@ -100,8 +98,7 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 	}
 	_, err = entity.orderItemRepo.InsertMany(ctx, orderItem)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
 	payment := model.Payment{
@@ -117,13 +114,12 @@ func (entity orderEntity) CreateOrder(form form.Order) (*model.Order, int, error
 	}
 	_, err = entity.paymentRepo.InsertOne(ctx, payment)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order, int, error) {
+func (entity *orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order, error) {
 	logrus.Info("GetOrderRange")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -135,62 +131,62 @@ func (entity orderEntity) GetOrderRange(form form.GetOrderRange) ([]model.Order,
 	},
 	})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	for cursor.Next(ctx) {
 		var data model.Order
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.Order{}
 	}
-
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) UpdateTotal() ([]model.Order, int, error) {
+func (entity *orderEntity) UpdateTotal() ([]model.Order, error) {
 	logrus.Info("UpdateTotal")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	var items []model.Order
 	cursor, err := entity.orderRepo.Find(ctx, bson.M{})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	for cursor.Next(ctx) {
 		var data model.Order
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
-		}
-		if data.Total == 0 {
-			data.Total = entity.GetTotalOrderById(data.Id.Hex())
-			data.TotalCost = entity.GetTotalCostOrderById(data.Id.Hex())
-			isReturnNewDoc := options.After
-			opts := &options.FindOneAndUpdateOptions{
-				ReturnDocument: &isReturnNewDoc,
+			logrus.Info(cursor.Current)
+		} else {
+			if data.Total == 0 {
+				data.Total = entity.GetTotalOrderById(data.Id.Hex())
+				data.TotalCost = entity.GetTotalCostOrderById(data.Id.Hex())
+				isReturnNewDoc := options.After
+				opts := &options.FindOneAndUpdateOptions{
+					ReturnDocument: &isReturnNewDoc,
+				}
+				err = entity.orderRepo.FindOneAndUpdate(ctx, bson.M{"_id": data.Id}, bson.M{"$set": data}, opts).Decode(&data)
+				if err != nil {
+					return nil, err
+				}
 			}
-			err = entity.orderRepo.FindOneAndUpdate(ctx, bson.M{"_id": data.Id}, bson.M{"$set": data}, opts).Decode(&data)
-			if err != nil {
-				logrus.Error(err)
-				return nil, http.StatusBadRequest, err
-			}
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.Order{}
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) GetOrderById(id string) (*model.Order, int, error) {
+func (entity *orderEntity) GetOrderById(id string) (*model.Order, error) {
 	logrus.Info("GetOrderById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -198,21 +194,19 @@ func (entity orderEntity) GetOrderById(id string) (*model.Order, int, error) {
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.orderRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) UpdateTotalCostOrderById(id string, totalCost float64) (*model.Order, int, error) {
+func (entity *orderEntity) UpdateTotalCostOrderById(id string, totalCost float64) (*model.Order, error) {
 	logrus.Info("UpdateTotalCostOrderById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	data, _, err := entity.GetOrderById(id)
+	data, err := entity.GetOrderById(id)
 	objId, _ := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 
 	data.TotalCost = totalCost
@@ -224,13 +218,12 @@ func (entity orderEntity) UpdateTotalCostOrderById(id string, totalCost float64)
 	}
 	err = entity.orderRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }
 
-func (entity orderEntity) GetOrderDetailById(id string) (*model.OrderDetail, int, error) {
+func (entity *orderEntity) GetOrderDetailById(id string) (*model.OrderDetail, error) {
 	logrus.Info("GetOrderDetailById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -238,28 +231,25 @@ func (entity orderEntity) GetOrderDetailById(id string) (*model.OrderDetail, int
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.orderRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
-	payment, _, err := entity.GetPaymentByOrderId(id)
+	payment, err := entity.GetPaymentByOrderId(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	data.Payment = *payment
 
-	items, _, err := entity.GetOrderItemDetailByOrderId(id)
+	items, err := entity.GetOrderItemDetailByOrderId(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	data.Items = items
 
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) RemoveOrderById(id string) (*model.OrderDetail, int, error) {
+func (entity *orderEntity) RemoveOrderById(id string) (*model.OrderDetail, error) {
 	logrus.Info("RemoveOrderById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -268,26 +258,24 @@ func (entity orderEntity) RemoveOrderById(id string) (*model.OrderDetail, int, e
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.orderRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
 	_, err = entity.orderRepo.DeleteOne(ctx, bson.M{"_id": data.Id})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
-	payment, _, _ := entity.RemovePaymentByOrderId(id)
+	payment, _ := entity.RemovePaymentByOrderId(id)
 	data.Payment = *payment
 
-	items, _, _ := entity.RemoveOrderItemByOrderId(id)
+	items, _ := entity.RemoveOrderItemByOrderId(id)
 	data.Items = items
 
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) UpdateTotalOrderById(id string) (*model.Order, int, error) {
+func (entity *orderEntity) UpdateTotalOrderById(id string) (*model.Order, error) {
 	logrus.Info("UpdateTotalOrderById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -296,8 +284,7 @@ func (entity orderEntity) UpdateTotalOrderById(id string) (*model.Order, int, er
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.orderRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
 	data.Total = entity.GetTotalOrderById(id)
@@ -309,14 +296,13 @@ func (entity orderEntity) UpdateTotalOrderById(id string) (*model.Order, int, er
 	}
 	err = entity.orderRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) GetTotalOrderById(orderId string) float64 {
+func (entity *orderEntity) GetTotalOrderById(orderId string) float64 {
 	logrus.Info("GetTotalOrderById")
 	ctx, cancel := core.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
@@ -337,7 +323,6 @@ func (entity orderEntity) GetTotalOrderById(orderId string) float64 {
 	var result []bson.M
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, pipeline)
 	if err != nil {
-		logrus.Error(err)
 		return 0
 	}
 	err = cursor.All(ctx, &result)
@@ -347,7 +332,7 @@ func (entity orderEntity) GetTotalOrderById(orderId string) float64 {
 	return result[0]["total"].(float64)
 }
 
-func (entity orderEntity) GetTotalCostOrderById(orderId string) float64 {
+func (entity *orderEntity) GetTotalCostOrderById(orderId string) float64 {
 	logrus.Info("GetTotalCostOrderById")
 	ctx, cancel := core.InitContext()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
@@ -368,7 +353,6 @@ func (entity orderEntity) GetTotalCostOrderById(orderId string) float64 {
 	var result []bson.M
 	cursor, err := entity.orderItemRepo.Aggregate(ctx, pipeline)
 	if err != nil {
-		logrus.Error(err)
 		return 0
 	}
 	err = cursor.All(ctx, &result)
@@ -378,7 +362,7 @@ func (entity orderEntity) GetTotalCostOrderById(orderId string) float64 {
 	return result[0]["totalCost"].(float64)
 }
 
-func (entity orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, int, error) {
+func (entity *orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemRange")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -402,8 +386,7 @@ func (entity orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.Or
 		{"$unwind": "$product"},
 	})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	var items []model.OrderItemDetail
 	for cursor.Next(ctx) {
@@ -411,16 +394,18 @@ func (entity orderEntity) GetOrderItemRange(form form.GetOrderRange) ([]model.Or
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.OrderItemDetail{}
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) GetOrderItemById(id string) (*model.OrderItem, int, error) {
+func (entity *orderEntity) GetOrderItemById(id string) (*model.OrderItem, error) {
 	logrus.Info("GetOrderItemById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -428,21 +413,19 @@ func (entity orderEntity) GetOrderItemById(id string) (*model.OrderItem, int, er
 	objId, _ := primitive.ObjectIDFromHex(id)
 	err := entity.orderItemRepo.FindOne(ctx, bson.M{"_id": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, int, error) {
+func (entity *orderEntity) UpdateOrderItemById(id string, form form.OrderItem) (*model.OrderItem, error) {
 	logrus.Info("UpdateOrderItemById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
-	data, _, err := entity.GetOrderItemById(id)
+	data, err := entity.GetOrderItemById(id)
 	objId, _ := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusNotFound, err
+		return nil, err
 	}
 
 	data.Discount = form.Discount
@@ -457,31 +440,28 @@ func (entity orderEntity) UpdateOrderItemById(id string, form form.OrderItem) (*
 	}
 	err = entity.orderItemRepo.FindOneAndUpdate(ctx, bson.M{"_id": objId}, bson.M{"$set": data}, opts).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return data, http.StatusOK, nil
+	return data, nil
 }
 
-func (entity orderEntity) RemoveOrderItemById(id string) (*model.OrderItemDetail, int, error) {
+func (entity *orderEntity) RemoveOrderItemById(id string) (*model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(id)
-	item, _, err := entity.GetOrderItemDetailById(id)
+	item, err := entity.GetOrderItemDetailById(id)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.orderItemRepo.DeleteOne(ctx, bson.M{"_id": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return item, http.StatusOK, nil
+	return item, nil
 }
 
-func (entity orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDetail, int, error) {
+func (entity *orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemDetailById")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -503,8 +483,7 @@ func (entity orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDet
 		{"$unwind": "$product"},
 	})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	var items []model.OrderItemDetail
 	for cursor.Next(ctx) {
@@ -512,16 +491,18 @@ func (entity orderEntity) GetOrderItemDetailById(id string) (*model.OrderItemDet
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.OrderItemDetail{}
 	}
-	return &items[0], http.StatusOK, nil
+	return &items[0], nil
 }
 
-func (entity orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.OrderItemDetail, int, error) {
+func (entity *orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemByOrderId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -542,9 +523,9 @@ func (entity orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.O
 		},
 		{"$unwind": "$product"},
 	})
+
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	var items []model.OrderItemDetail
 	for cursor.Next(ctx) {
@@ -552,16 +533,18 @@ func (entity orderEntity) GetOrderItemDetailByOrderId(orderId string) ([]model.O
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.OrderItemDetail{}
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) GetOrderItemDetailByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error) {
+func (entity *orderEntity) GetOrderItemDetailByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error) {
 	logrus.Info("GetOrderItemDetailByOrderProductId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -584,9 +567,9 @@ func (entity orderEntity) GetOrderItemDetailByOrderProductId(orderId string, pro
 		},
 		{"$unwind": "$product"},
 	})
+
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	var items []model.OrderItemDetail
 	for cursor.Next(ctx) {
@@ -594,16 +577,18 @@ func (entity orderEntity) GetOrderItemDetailByOrderProductId(orderId string, pro
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.OrderItemDetail{}
 	}
-	return &items[0], http.StatusOK, nil
+	return &items[0], nil
 }
 
-func (entity orderEntity) GetOrderItemByProductId(productId string) ([]model.OrderItem, int, error) {
+func (entity *orderEntity) GetOrderItemByProductId(productId string) ([]model.OrderItem, error) {
 	logrus.Info("GetOrderItemByProductId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -611,9 +596,9 @@ func (entity orderEntity) GetOrderItemByProductId(productId string) ([]model.Ord
 	cursor, err := entity.orderItemRepo.Find(ctx, bson.M{
 		"productId": objId,
 	})
+
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	var items []model.OrderItem
 	for cursor.Next(ctx) {
@@ -621,53 +606,51 @@ func (entity orderEntity) GetOrderItemByProductId(productId string) ([]model.Ord
 		err = cursor.Decode(&data)
 		if err != nil {
 			logrus.Error(err)
+			logrus.Info(cursor.Current)
+		} else {
+			items = append(items, data)
 		}
-		items = append(items, data)
 	}
 	if items == nil {
 		items = []model.OrderItem{}
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) RemoveOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, int, error) {
+func (entity *orderEntity) RemoveOrderItemByOrderId(orderId string) ([]model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemByOrderId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
-	items, _, err := entity.GetOrderItemDetailByOrderId(orderId)
+	items, err := entity.GetOrderItemDetailByOrderId(orderId)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.orderItemRepo.DeleteMany(ctx, bson.M{"orderId": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return items, http.StatusOK, nil
+	return items, nil
 }
 
-func (entity orderEntity) RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, int, error) {
+func (entity *orderEntity) RemoveOrderItemByOrderProductId(orderId string, productId string) (*model.OrderItemDetail, error) {
 	logrus.Info("RemoveOrderItemByOrderProductId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	productObjId, _ := primitive.ObjectIDFromHex(productId)
-	item, _, err := entity.GetOrderItemDetailByOrderProductId(orderId, productId)
+	item, err := entity.GetOrderItemDetailByOrderProductId(orderId, productId)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.orderItemRepo.DeleteOne(ctx, bson.M{"orderId": objId, "productId": productObjId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return item, http.StatusOK, nil
+	return item, nil
 }
 
-func (entity orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, int, error) {
+func (entity *orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, error) {
 	logrus.Info("GetPaymentByOrderId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -675,13 +658,12 @@ func (entity orderEntity) GetPaymentByOrderId(orderId string) (*model.Payment, i
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	err := entity.paymentRepo.FindOne(ctx, bson.M{"orderId": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }
 
-func (entity orderEntity) RemovePaymentByOrderId(orderId string) (*model.Payment, int, error) {
+func (entity *orderEntity) RemovePaymentByOrderId(orderId string) (*model.Payment, error) {
 	logrus.Info("RemovePaymentByOrderId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -689,13 +671,11 @@ func (entity orderEntity) RemovePaymentByOrderId(orderId string) (*model.Payment
 	objId, _ := primitive.ObjectIDFromHex(orderId)
 	err := entity.paymentRepo.FindOne(ctx, bson.M{"orderId": objId}).Decode(&data)
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
 	_, err = entity.paymentRepo.DeleteMany(ctx, bson.M{"orderId": objId})
 	if err != nil {
-		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &data, http.StatusOK, nil
+	return &data, nil
 }

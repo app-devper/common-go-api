@@ -28,3 +28,9 @@ func NotifyMassage(massage string) (*notify.Response, error) {
 	}
 	return res, nil
 }
+
+func ToFormat(date time.Time) string {
+	location, _ := time.LoadLocation("Asia/Bangkok")
+	format := "02 Jan 2006 15:04"
+	return date.In(location).Format(format)
+}
