@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"net/http"
 )
 
 var Entity INotification
@@ -21,8 +20,8 @@ type notificationEntity struct {
 }
 
 type INotification interface {
-	Subscription(form form.Subscription) (*model.Subscription, int, error)
-	GetOneByUserId(userId string) (*model.Subscription, int, error)
+	Subscription(form form.Subscription) (*model.Subscription, error)
+	GetOneByUserId(userId string) (*model.Subscription, error)
 }
 
 func NewNotificationEntity(resource *db.Resource) INotification {
@@ -31,7 +30,7 @@ func NewNotificationEntity(resource *db.Resource) INotification {
 	return Entity
 }
 
-func (entity *notificationEntity) Subscription(form form.Subscription) (*model.Subscription, int, error) {
+func (entity *notificationEntity) Subscription(form form.Subscription) (*model.Subscription, error) {
 	logrus.Info("Subscription")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -41,7 +40,7 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 		DeviceToken: form.DeviceToken,
 		Channel:     form.Channel,
 	}
-	found, _, _ := entity.GetOneByUserId(form.UserId)
+	found, _ := entity.GetOneByUserId(form.UserId)
 	if found != nil {
 		subscription.Id = found.Id
 		isReturnNewDoc := options.After
@@ -51,21 +50,21 @@ func (entity *notificationEntity) Subscription(form form.Subscription) (*model.S
 		err := entity.repo.FindOneAndUpdate(ctx, bson.M{"userId": userId}, bson.M{"$set": subscription}, opts).Decode(&subscription)
 		if err != nil {
 			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		return &subscription, http.StatusOK, nil
+		return &subscription, nil
 	} else {
 		subscription.Id = primitive.NewObjectID()
 		_, err := entity.repo.InsertOne(ctx, subscription)
 		if err != nil {
 			logrus.Error(err)
-			return nil, http.StatusBadRequest, err
+			return nil, err
 		}
-		return &subscription, http.StatusOK, nil
+		return &subscription, nil
 	}
 }
 
-func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscription, int, error) {
+func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscription, error) {
 	logrus.Info("GetOneByUserId")
 	ctx, cancel := core.InitContext()
 	defer cancel()
@@ -74,7 +73,7 @@ func (entity *notificationEntity) GetOneByUserId(userId string) (*model.Subscrip
 	err := entity.repo.FindOne(ctx, bson.M{"userId": objId}).Decode(&user)
 	if err != nil {
 		logrus.Error(err)
-		return nil, http.StatusBadRequest, err
+		return nil, err
 	}
-	return &user, http.StatusOK, nil
+	return &user, nil
 }
