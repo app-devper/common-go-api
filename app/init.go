@@ -1,16 +1,20 @@
 package app
 
 import (
+	"devper/app/featues/category"
+	"devper/app/featues/category/repository"
+	"devper/app/featues/notification"
+	repository2 "devper/app/featues/notification/repository"
+	"devper/app/featues/order"
+	repository3 "devper/app/featues/order/repository"
+	"devper/app/featues/product"
+	repository4 "devper/app/featues/product/repository"
+	"devper/app/featues/user"
+	repository5 "devper/app/featues/user/repository"
+	"devper/db"
+	"devper/middlewares"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"mgo-gin/app/featues/category"
-	"mgo-gin/app/featues/notification"
-	"mgo-gin/app/featues/order"
-	"mgo-gin/app/featues/product"
-	"mgo-gin/app/featues/user"
-	"mgo-gin/db"
-	"mgo-gin/middlewares"
-	"net/http"
 	"os"
 )
 
@@ -37,15 +41,20 @@ func (app Routes) StartGin() {
 
 	publicRoute := r.Group("/api/v1")
 
-	user.ApplyUserAPI(publicRoute, resource)
-	notification.ApplyNotificationAPI(publicRoute, resource)
-	product.ApplyProductAPI(publicRoute, resource)
-	order.ApplyOrderAPI(publicRoute, resource)
-	category.ApplyCategoryAPI(publicRoute, resource)
+	userEntity := repository5.NewUserEntity(resource)
+	productEntity := repository4.NewProductEntity(resource)
+	orderEntity := repository3.NewOrderEntity(resource)
+	notificationEntity := repository2.NewNotificationEntity(resource)
+	categoryEntity := repository.NewCategoryEntity(resource)
 
-	r.NoRoute(func(context *gin.Context) {
-		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Service Missing / Not found."})
-	})
+	user.ApplyAuthAPI(publicRoute, userEntity)
+	user.ApplyUserAPI(publicRoute, userEntity)
+	notification.ApplyNotificationAPI(publicRoute, notificationEntity)
+	product.ApplyProductAPI(publicRoute, productEntity)
+	order.ApplyOrderAPI(publicRoute, orderEntity, productEntity)
+	category.ApplyCategoryAPI(publicRoute, categoryEntity)
+
+	r.NoRoute(middlewares.NoRoute())
 
 	err = r.Run(":" + os.Getenv("PORT"))
 	if err != nil {

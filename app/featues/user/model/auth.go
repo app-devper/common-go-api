@@ -13,7 +13,7 @@ type UserReference struct {
 	ChannelInfo string             `bson:"channelInfo" json:"channelInfo"`
 	RefId       string             `bson:"refId" json:"refId"`
 	Code        string             `bson:"code" json:"-"`
-	Status      string             `bson:"status" json:"-"`
+	Status      string             `bson:"status" json:"status"`
 	ValidPeriod int                `bson:"validPeriod" json:"validPeriod"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
 	ExpireDate  time.Time          `bson:"expireDate" json:"expireDate"`

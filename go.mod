@@ -1,4 +1,4 @@
-module mgo-gin
+module devper
 
 go 1.16
 
