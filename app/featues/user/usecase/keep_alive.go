@@ -14,6 +14,7 @@ import (
 func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userId := ctx.GetString("UserId")
+		userRefId := ctx.GetString("UserRefId")
 		user, err := userEntity.GetUserById(userId)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -23,7 +24,7 @@ func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 			UserId:      user.Id,
 			Type:        constant.AccessToken,
 			Objective:   constant.AccessApi,
-			Channel:     "USERNAME",
+			Channel:     "ACCESS_TOKEN",
 			ChannelInfo: user.Username,
 			ExpireDate:  time.Now().Add(config.AccessTokenTime),
 			Status:      constant.ACTIVE,
@@ -33,6 +34,9 @@ func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		_, _ = userEntity.RevokeVerification(userRefId)
+
 		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, userRef.ExpireDate)
 		result := gin.H{
 			"accessToken": token,
