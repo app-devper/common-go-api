@@ -31,7 +31,7 @@ func VerifyUserCode(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		if userRef.ExpireDate.Before(time.Now()) {
-			err = errors.New("token invalid")
+			err = errors.New("user ref expired")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
