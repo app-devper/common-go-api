@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"devper/app/core/constant"
+	"devper/app/core/utils"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
 	"devper/config"
@@ -35,6 +36,9 @@ func VerifyUserChannel(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		_, _ = utils.NotifyMassage("RefId :" + result.RefId + " Code :" + result.Code)
+
 		ctx.JSON(http.StatusOK, result)
 	}
 }
