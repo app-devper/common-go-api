@@ -10,6 +10,7 @@ import (
 func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userId := ctx.GetString("UserId")
+		userRefId := ctx.GetString("UserRefId")
 		userRequest := form.SetPassword{}
 		err := ctx.ShouldBind(&userRequest)
 		if err != nil {
@@ -21,6 +22,8 @@ func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		_, _ = userEntity.RevokeVerification(userRefId)
 
 		ctx.JSON(http.StatusOK, result)
 	}

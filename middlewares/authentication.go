@@ -65,7 +65,8 @@ func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
 			return jwtKey, nil
 		})
 		if err != nil {
-			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
 		if tkn == nil || !tkn.Valid || claims.UserRefId == "" {
 			err := errors.New("token invalid authorization header")
@@ -73,9 +74,6 @@ func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		userRef, err := userEntity.GetVerificationById(claims.UserRefId)
-		if err != nil {
-			logrus.Error(err)
-		}
 		if userRef == nil {
 			err := errors.New("user ref invalid")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -151,7 +149,8 @@ func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
 			return jwtKey, nil
 		})
 		if err != nil {
-			logrus.Error(err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
 		if tkn == nil || !tkn.Valid {
 			err := errors.New("token invalid action token header")
@@ -159,9 +158,6 @@ func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		userRef, err := userEntity.GetVerificationById(claims.UserRefId)
-		if err != nil {
-			logrus.Error(err)
-		}
 		if userRef == nil {
 			err := errors.New("user ref invalid")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -183,9 +179,6 @@ func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
 			return
 		}
 		user, err := userEntity.GetUserById(userRef.UserId.Hex())
-		if err != nil {
-			logrus.Error(err)
-		}
 		if user == nil {
 			err := errors.New("user invalid")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -195,10 +188,6 @@ func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
 			err := errors.New("user not active")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
-		}
-		_, err = userEntity.RevokeVerification(claims.UserRefId)
-		if err != nil {
-			logrus.Error(err)
 		}
 
 		ctx.Set("UserId", user.Id.Hex())

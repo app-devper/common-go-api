@@ -20,7 +20,9 @@ func VerifyUser(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		_ = userEntity.RemoveVerificationObjective(userRequest.Objective)
+
 		ref := form.Reference{
 			UserId:    user.Id,
 			Type:      constant.ActionToken,

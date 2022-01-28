@@ -5,6 +5,7 @@ import (
 	"devper/app/core/utils"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
+	"devper/config"
 	"devper/middlewares"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -29,14 +30,13 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		expirationTime := time.Now().Add(24 * time.Hour)
 		ref := form.Reference{
 			UserId:      user.Id,
 			Type:        constant.AccessToken,
 			Objective:   constant.AccessApi,
 			Channel:     "USERNAME",
 			ChannelInfo: user.Username,
-			ExpireDate:  expirationTime,
+			ExpireDate:  time.Now().Add(config.AccessTokenTime),
 			Status:      constant.ACTIVE,
 		}
 		userRef, err := userEntity.CreateVerification(ref)
@@ -44,7 +44,7 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, expirationTime)
+		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, userRef.ExpireDate)
 		result := gin.H{
 			"accessToken": token,
 		}

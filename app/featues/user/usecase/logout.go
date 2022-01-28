@@ -9,11 +9,7 @@ import (
 func Logout(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRefId := ctx.GetString("UserRefId")
-		_, err := userEntity.RevokeVerification(userRefId)
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+		_, _ = userEntity.RevokeVerification(userRefId)
 		result := gin.H{
 			"message": "success",
 		}

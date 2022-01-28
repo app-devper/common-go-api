@@ -18,7 +18,7 @@ func SignUp(userEntity repository.IUser) gin.HandlerFunc {
 		}
 		found, _ := userEntity.GetUserByUsername(userRequest.Username)
 		if found != nil {
-			err := errors.New("username is taken")
+			err = errors.New("username is taken")
 			ctx.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
