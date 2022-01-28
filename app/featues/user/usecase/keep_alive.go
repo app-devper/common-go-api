@@ -7,37 +7,37 @@ import (
 	"devper/config"
 	"devper/middlewares"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
 
 func KeepAlive(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		userId := ctx.GetString("UserId")
 		userRefId := ctx.GetString("UserRefId")
-		user, err := userEntity.GetUserByRefId(userRefId, constant.AccessApi)
+		user, err := userEntity.GetUserById(userId)
 		if err != nil {
-			logrus.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		expirationTime := time.Now().Add(config.AccessTokenTime)
 		ref := form.Reference{
 			UserId:      user.Id,
+			Type:        constant.AccessToken,
 			Objective:   constant.AccessApi,
-			Channel:     "USERNAME",
+			Channel:     "ACCESS_TOKEN",
 			ChannelInfo: user.Username,
-			ExpireDate:  expirationTime,
+			ExpireDate:  time.Now().Add(config.AccessTokenTime),
 			Status:      constant.ACTIVE,
 		}
 		userRef, err := userEntity.CreateVerification(ref)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, expirationTime)
+
+		_, _ = userEntity.RevokeVerification(userRefId)
+
+		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, userRef.ExpireDate)
 		result := gin.H{
 			"accessToken": token,
 		}

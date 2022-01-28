@@ -4,11 +4,15 @@ import (
 	"devper/app/core/constant"
 	"devper/app/featues/product/repository"
 	"devper/app/featues/product/usecase"
+	repository2 "devper/app/featues/user/repository"
 	"devper/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
-func ApplyProductAPI(app *gin.RouterGroup, productEntity repository.IProduct) {
+func ApplyProductAPI(app *gin.RouterGroup,
+	productEntity repository.IProduct,
+	userEntity repository2.IUser,
+) {
 
 	productRoute := app.Group("product")
 
@@ -17,7 +21,7 @@ func ApplyProductAPI(app *gin.RouterGroup, productEntity repository.IProduct) {
 	)
 
 	productRoute.POST("",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.CreateProduct(productEntity),
 	)
@@ -27,13 +31,13 @@ func ApplyProductAPI(app *gin.RouterGroup, productEntity repository.IProduct) {
 	)
 
 	productRoute.PUT("/:productId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.UpdateProductById(productEntity),
 	)
 
 	productRoute.DELETE("/:productId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.DeleteProductById(productEntity),
 	)

@@ -22,12 +22,12 @@ func GetRolesFromToken(tokenReq string) (role []string) {
 }
 
 func RequireAuthorization(auths ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
+	return func(ctx *gin.Context) {
+		token := ctx.GetHeader("Authorization")
 		jwtToken := strings.Split(token, "Bearer ")
 		roles := GetRolesFromToken(jwtToken[1])
 		if len(roles) <= 0 {
-			invalidRequest(c)
+			invalidRequest(ctx)
 			return
 		}
 		isAccessible := false
@@ -52,10 +52,10 @@ func RequireAuthorization(auths ...string) gin.HandlerFunc {
 			}
 		}
 		if isAccessible == false {
-			notPermission(c)
+			notPermission(ctx)
 			return
 		}
-		c.Next()
+		ctx.Next()
 	}
 }
 

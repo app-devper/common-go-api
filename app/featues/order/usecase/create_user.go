@@ -6,7 +6,6 @@ import (
 	"devper/app/featues/order/repository"
 	repository2 "devper/app/featues/product/repository"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -14,7 +13,6 @@ func CreateOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 	return func(ctx *gin.Context) {
 		request := form.Order{}
 		if err := ctx.ShouldBind(&request); err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -27,7 +25,6 @@ func CreateOrder(orderEntity repository.IOrder, productEntity repository2.IProdu
 
 		result, err := orderEntity.CreateOrder(request)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

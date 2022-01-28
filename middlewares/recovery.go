@@ -10,8 +10,8 @@ func NewRecovery() gin.HandlerFunc {
 	return nice.Recovery(recoveryHandler)
 }
 
-func recoveryHandler(c *gin.Context, err interface{}) {
-	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+func recoveryHandler(ctx *gin.Context, err interface{}) {
+	ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 		"error": err,
 	})
 }

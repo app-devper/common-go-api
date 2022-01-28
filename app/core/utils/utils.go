@@ -36,30 +36,30 @@ func ToFormat(date time.Time) string {
 
 const otpChars = "1234567890"
 
-func GenerateCode(length int) (string, error) {
+func GenerateCode(length int) string {
 	buffer := make([]byte, length)
 	_, err := rand.Read(buffer)
 	if err != nil {
-		return "", err
+		return ""
 	}
 	otpCharsLength := len(otpChars)
 	for i := 0; i < length; i++ {
 		buffer[i] = otpChars[int(buffer[i])%otpCharsLength]
 	}
-	return string(buffer), nil
+	return string(buffer)
 }
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func GenerateRefId(length int) (string, error) {
+func GenerateRefId(length int) string {
 	buffer := make([]byte, length)
 	_, err := rand.Read(buffer)
 	if err != nil {
-		return "", err
+		return ""
 	}
 	otpCharsLength := len(alphabet)
 	for i := 0; i < length; i++ {
 		buffer[i] = alphabet[int(buffer[i])%otpCharsLength]
 	}
-	return string(buffer), nil
+	return string(buffer)
 }

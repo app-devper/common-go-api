@@ -6,7 +6,6 @@ import (
 	repository2 "devper/app/featues/product/repository"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -15,7 +14,6 @@ func DeleteOrderById(orderEntity repository.IOrder, productEntity repository2.IP
 		orderId := ctx.Param("orderId")
 		result, err := orderEntity.RemoveOrderById(orderId)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

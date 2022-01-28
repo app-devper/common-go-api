@@ -8,7 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ApplyAuthAPI(app *gin.RouterGroup, userEntity repository.IUser) {
+func ApplyAuthAPI(
+	app *gin.RouterGroup,
+	userEntity repository.IUser,
+) {
 
 	authRoute := app.Group("auth")
 
@@ -33,90 +36,93 @@ func ApplyAuthAPI(app *gin.RouterGroup, userEntity repository.IUser) {
 	)
 
 	authRoute.GET("/verify-info",
-		middlewares.RequireActionToken(),
+		middlewares.RequireActionToken(userEntity),
 		usecase.GetVerifyInfo(userEntity),
 	)
 
 	authRoute.POST("/verify-password",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.VerifyPassword(userEntity),
 	)
 
 	authRoute.POST("/logout",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.Logout(userEntity),
 	)
 
 }
 
-func ApplyUserAPI(app *gin.RouterGroup, userEntity repository.IUser) {
+func ApplyUserAPI(
+	app *gin.RouterGroup,
+	userEntity repository.IUser,
+) {
 
 	userRoute := app.Group("/user")
 
 	userRoute.GET("/info",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.GetUserInfo(userEntity),
 	)
 
 	userRoute.PUT("/info",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.UpdateUserInfo(userEntity),
 	)
 
 	userRoute.PUT("/change-password",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.ChangePassword(userEntity),
 	)
 
 	userRoute.GET("/keep-alive",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		usecase.KeepAlive(userEntity),
 	)
 
 	userRoute.POST("/set-password",
-		middlewares.RequireActionToken(),
+		middlewares.RequireActionToken(userEntity),
 		usecase.SetPassword(userEntity),
 	)
 
 	// ADMIN
 	userRoute.GET("",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.GetUsers(userEntity),
 	)
 
 	userRoute.POST("",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.AddUser(userEntity),
 	)
 
 	userRoute.GET("/:id",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.GetUserById(userEntity),
 	)
 
 	userRoute.DELETE("/:id",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.DeleteUserById(userEntity),
 	)
 
 	userRoute.PUT("/:id",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.UpdateUserById(userEntity),
 	)
 
 	userRoute.PATCH("/:id/status",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.UpdateStatusById(userEntity),
 	)
 
 	userRoute.PATCH("/:id/role",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.UpdateRoleById(userEntity),
 	)

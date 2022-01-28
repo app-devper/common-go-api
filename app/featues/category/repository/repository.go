@@ -42,6 +42,7 @@ func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Catego
 	logrus.Info("UpdateDefaultCategoryById")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
+
 	_, err := entity.categoryRepo.UpdateMany(ctx, bson.M{}, bson.M{"$set": bson.M{
 		"default": false,
 	}})

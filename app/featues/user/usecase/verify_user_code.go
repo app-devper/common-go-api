@@ -8,7 +8,6 @@ import (
 	"devper/middlewares"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -17,43 +16,36 @@ func VerifyUserCode(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRequest := form.VerifyCode{}
 		if err := ctx.ShouldBind(&userRequest); err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		userRef, err := userEntity.GetVerificationById(userRequest.UserRefId)
 		if userRef == nil {
-			logrus.Error(err)
 			err = errors.New("user ref invalid")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if userRef.Status == constant.ACTIVE {
-			logrus.Error(err)
 			err = errors.New("user ref is active")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if userRef.ExpireDate.Before(time.Now()) {
-			logrus.Error(err)
-			err = errors.New("token invalid")
+			err = errors.New("user ref expired")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		if userRequest.RefId != userRef.RefId || userRequest.Code != userRef.Code {
-			logrus.Error(err)
-			err = errors.New("wrong code")
+			err = errors.New("code invalid")
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		expirationTime := time.Now().Add(config.ActionTokenTime)
-		userRef, err = userEntity.ActiveVerification(userRequest.UserRefId, expirationTime)
+		userRef, err = userEntity.ActiveVerification(userRequest.UserRefId, time.Now().Add(config.ActionTokenTime))
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		actionToken := middlewares.GenerateActionToken(userRequest.UserRefId, expirationTime)
+		actionToken := middlewares.GenerateActionToken(userRef.Id.Hex(), userRef.Objective, userRef.ExpireDate)
 		result := gin.H{
 			"actionToken": actionToken,
 		}
