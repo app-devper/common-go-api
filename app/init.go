@@ -49,10 +49,10 @@ func (app Routes) StartGin() {
 
 	user.ApplyAuthAPI(publicRoute, userEntity)
 	user.ApplyUserAPI(publicRoute, userEntity)
-	notification.ApplyNotificationAPI(publicRoute, notificationEntity)
-	product.ApplyProductAPI(publicRoute, productEntity)
-	order.ApplyOrderAPI(publicRoute, orderEntity, productEntity)
-	category.ApplyCategoryAPI(publicRoute, categoryEntity)
+	notification.ApplyNotificationAPI(publicRoute, notificationEntity, userEntity)
+	product.ApplyProductAPI(publicRoute, productEntity, userEntity)
+	order.ApplyOrderAPI(publicRoute, orderEntity, productEntity, userEntity)
+	category.ApplyCategoryAPI(publicRoute, categoryEntity, userEntity)
 
 	r.NoRoute(middlewares.NoRoute())
 

@@ -34,6 +34,7 @@ type VerifyCode struct {
 
 type Reference struct {
 	UserId      primitive.ObjectID
+	Type        string
 	Objective   string
 	Channel     string
 	ChannelInfo string

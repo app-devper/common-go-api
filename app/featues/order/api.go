@@ -5,11 +5,17 @@ import (
 	"devper/app/featues/order/repository"
 	"devper/app/featues/order/usecase"
 	repository2 "devper/app/featues/product/repository"
+	repository3 "devper/app/featues/user/repository"
 	"devper/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
-func ApplyOrderAPI(app *gin.RouterGroup, orderEntity repository.IOrder, productEntity repository2.IProduct) {
+func ApplyOrderAPI(
+	app *gin.RouterGroup,
+	orderEntity repository.IOrder,
+	productEntity repository2.IProduct,
+	userEntity repository3.IUser,
+) {
 	orderRoute := app.Group("order")
 
 	orderRoute.POST("",
@@ -25,13 +31,13 @@ func ApplyOrderAPI(app *gin.RouterGroup, orderEntity repository.IOrder, productE
 	)
 
 	orderRoute.DELETE("/:orderId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.DeleteOrderById(orderEntity, productEntity),
 	)
 
 	orderRoute.GET("/:orderId/total-cost",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.UpdateTotalCostById(orderEntity, productEntity),
 	)
@@ -45,19 +51,19 @@ func ApplyOrderAPI(app *gin.RouterGroup, orderEntity repository.IOrder, productE
 	)
 
 	orderRoute.DELETE("/item/:itemId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.DeleteOrderItemById(orderEntity, productEntity),
 	)
 
 	orderRoute.GET("/product/:productId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.GetOrderItemByProductId(orderEntity),
 	)
 
 	orderRoute.DELETE("/:orderId/product/:productId",
-		middlewares.RequireAuthenticated(),
+		middlewares.RequireAuthenticated(userEntity),
 		middlewares.RequireAuthorization(constant.ADMIN),
 		usecase.DeleteOrderItemByOrderProductId(orderEntity, productEntity),
 	)

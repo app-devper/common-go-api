@@ -6,7 +6,6 @@ import (
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/model"
 	"devper/db"
-	"errors"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,7 +35,7 @@ type IUser interface {
 	UpdateRoleById(id string, form form.UpdateRole) (*model.User, error)
 	ChangePassword(id string, form form.ChangePassword) (*model.User, error)
 	SetPassword(id string, form form.SetPassword) (*model.User, error)
-	GetUserByRefId(userRefId string, objective string) (*model.User, error)
+
 	CreateVerification(form form.Reference) (*model.UserReference, error)
 	UpdateVerification(form form.VerifyChannel, expireTime time.Time) (*model.UserReference, error)
 	ActiveVerification(userRefId string, expireTime time.Time) (*model.UserReference, error)
@@ -64,31 +63,6 @@ func (entity *userEntity) CreateIndex() (string, error) {
 	}
 	ind, err := entity.userRepo.Indexes().CreateOne(ctx, mod)
 	return ind, err
-}
-
-func (entity *userEntity) GetUserByRefId(userRefId string, objective string) (*model.User, error) {
-	logrus.Info("GetUserByRefId")
-	userRef, _ := entity.GetVerificationById(userRefId)
-	if userRef == nil {
-		return nil, errors.New("user ref invalid")
-	}
-	if userRef.Status != constant.ACTIVE {
-		return nil, errors.New("user ref not active")
-	}
-	if userRef.Objective != objective {
-		return nil, errors.New("wrong objective")
-	}
-	if userRef.ExpireDate.Before(time.Now()) {
-		return nil, errors.New("token invalid")
-	}
-	user, _ := entity.GetUserById(userRef.UserId.Hex())
-	if user == nil {
-		return nil, errors.New("user invalid")
-	}
-	if user.Status != constant.ACTIVE {
-		return nil, errors.New("user not active")
-	}
-	return user, nil
 }
 
 func (entity *userEntity) GetUserAll() ([]model.User, error) {
@@ -124,9 +98,6 @@ func (entity *userEntity) GetUserByUsername(username string) (*model.User, error
 	err := entity.userRepo.FindOne(ctx, bson.M{"username": strings.TrimSpace(username)}).Decode(&user)
 	if err != nil {
 		return nil, err
-	}
-	if user.Status != constant.ACTIVE {
-		return nil, errors.New("user not active")
 	}
 	return &user, nil
 }
@@ -200,6 +171,7 @@ func (entity *userEntity) UpdateUserById(id string, form form.UpdateUser) (*mode
 	if err != nil {
 		return nil, err
 	}
+
 	user.FirstName = form.FirstName
 	user.LastName = form.LastName
 	user.Email = form.Email
@@ -322,6 +294,7 @@ func (entity *userEntity) CreateVerification(form form.Reference) (*model.UserRe
 	reference := model.UserReference{
 		Id:          userRefId,
 		UserId:      form.UserId,
+		Type:        form.Type,
 		Objective:   form.Objective,
 		Channel:     form.Channel,
 		ChannelInfo: form.ChannelInfo,
@@ -348,8 +321,8 @@ func (entity *userEntity) UpdateVerification(form form.VerifyChannel, expireTime
 	}
 	reference.Channel = form.Channel
 	reference.ChannelInfo = form.ChannelInfo
-	reference.Code, _ = utils.GenerateCode(6)
-	reference.RefId, _ = utils.GenerateRefId(4)
+	reference.Code = utils.GenerateCode(6)
+	reference.RefId = utils.GenerateRefId(4)
 	reference.ExpireDate = expireTime
 	reference.ValidPeriod = 5
 	isReturnNewDoc := options.After

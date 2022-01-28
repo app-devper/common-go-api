@@ -1,37 +1,27 @@
 package usecase
 
 import (
-	"devper/app/core/constant"
 	"devper/app/featues/user/form"
 	"devper/app/featues/user/repository"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func SetPassword(userEntity repository.IUser) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		verifyId := ctx.GetString("verifyId")
-		user, err := userEntity.GetUserByRefId(verifyId, constant.SetPassword)
-		if err != nil {
-			logrus.Error(err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
+		userId := ctx.GetString("UserId")
 		userRequest := form.SetPassword{}
-		err = ctx.ShouldBind(&userRequest)
+		err := ctx.ShouldBind(&userRequest)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		result, err := userEntity.SetPassword(user.Id.Hex(), userRequest)
+		result, err := userEntity.SetPassword(userId, userRequest)
 		if err != nil {
-			logrus.Error(err)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		_, _ = userEntity.RevokeVerification(verifyId)
+
 		ctx.JSON(http.StatusOK, result)
 	}
 }

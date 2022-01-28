@@ -8,6 +8,7 @@ import (
 type UserReference struct {
 	Id          primitive.ObjectID `bson:"_id" json:"userRefId"`
 	UserId      primitive.ObjectID `bson:"userId" json:"-"`
+	Type        string             `bson:"type" json:"type"`
 	Objective   string             `bson:"objective" json:"objective"`
 	Channel     string             `bson:"channel" json:"channel"`
 	ChannelInfo string             `bson:"channelInfo" json:"channelInfo"`

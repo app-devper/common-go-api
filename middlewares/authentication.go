@@ -1,6 +1,9 @@
 package middlewares
 
 import (
+	"devper/app/core/constant"
+	"devper/app/featues/user/repository"
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -13,19 +16,20 @@ import (
 // Create the JWT key used to create the signature
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
-type Claims struct {
+type AccessClaims struct {
 	UserRefId string `json:"userRefId"`
 	Role      string `json:"role"`
 	jwt.StandardClaims
 }
 
 type ActionClaims struct {
-	VerifyId string `json:"verifyId"`
+	UserRefId string `json:"userRefId"`
+	Objective string `json:"objective"`
 	jwt.StandardClaims
 }
 
 func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) string {
-	claims := &Claims{
+	claims := &AccessClaims{
 		UserRefId: userRefId,
 		Role:      role,
 		StandardClaims: jwt.StandardClaims{
@@ -42,19 +46,21 @@ func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) s
 	return tokenString
 }
 
-func RequireAuthenticated() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
+func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := ctx.GetHeader("Authorization")
 		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+			err := errors.New("missing authorization header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		jwtToken := strings.Split(token, "Bearer ")
 		if len(jwtToken) < 2 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization header"})
+			err := errors.New("missing authorization header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		claims := &Claims{}
+		claims := &AccessClaims{}
 		tkn, err := jwt.ParseWithClaims(jwtToken[1], claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
@@ -62,19 +68,64 @@ func RequireAuthenticated() gin.HandlerFunc {
 			logrus.Error(err)
 		}
 		if tkn == nil || !tkn.Valid || claims.UserRefId == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid authorization header"})
+			err := errors.New("token invalid authorization header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		c.Set("UserRefId", claims.UserRefId)
-		c.Set("Role", claims.Role)
+		userRef, err := userEntity.GetVerificationById(claims.UserRefId)
+		if err != nil {
+			logrus.Error(err)
+		}
+		if userRef == nil {
+			err := errors.New("user ref invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Status != constant.ACTIVE {
+			err := errors.New("user ref not active")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Objective != constant.AccessApi {
+			err := errors.New("objective invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.ExpireDate.Before(time.Now()) {
+			err := errors.New("token invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		user, err := userEntity.GetUserById(userRef.UserId.Hex())
+		if err != nil {
+			logrus.Error(err)
+		}
+		if user == nil {
+			err := errors.New("user invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if user.Status != constant.ACTIVE {
+			err := errors.New("user not active")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.Set("UserRefId", claims.UserRefId)
+		ctx.Set("UserId", userRef.UserId.Hex())
+		ctx.Set("Role", claims.Role)
+
 		logrus.Info("UserRefId: " + claims.UserRefId)
+		logrus.Info("UserId: " + userRef.UserId.Hex())
+		logrus.Info("Role: " + claims.Role)
 		return
 	}
 }
 
-func GenerateActionToken(verifyId string, expirationTime time.Time) string {
+func GenerateActionToken(userRefId string, objective string, expirationTime time.Time) string {
 	claims := &ActionClaims{
-		VerifyId: verifyId,
+		UserRefId: userRefId,
+		Objective: objective,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -87,11 +138,12 @@ func GenerateActionToken(verifyId string, expirationTime time.Time) string {
 	return tokenString
 }
 
-func RequireActionToken() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("X-Action-Token")
+func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := ctx.GetHeader("X-Action-Token")
 		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing action token header"})
+			err := errors.New("missing action token header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		claims := &ActionClaims{}
@@ -102,11 +154,58 @@ func RequireActionToken() gin.HandlerFunc {
 			logrus.Error(err)
 		}
 		if tkn == nil || !tkn.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token invalid action token header"})
+			err := errors.New("token invalid action token header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		c.Set("verifyId", claims.VerifyId)
-		logrus.Info("VerifyId: " + claims.VerifyId)
+		userRef, err := userEntity.GetVerificationById(claims.UserRefId)
+		if err != nil {
+			logrus.Error(err)
+		}
+		if userRef == nil {
+			err := errors.New("user ref invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Status != constant.ACTIVE {
+			err := errors.New("user ref not active")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.Objective != claims.Objective {
+			err := errors.New("objective invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if userRef.ExpireDate.Before(time.Now()) {
+			err := errors.New("token invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		user, err := userEntity.GetUserById(userRef.UserId.Hex())
+		if err != nil {
+			logrus.Error(err)
+		}
+		if user == nil {
+			err := errors.New("user invalid")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		if user.Status != constant.ACTIVE {
+			err := errors.New("user not active")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		_, err = userEntity.RevokeVerification(claims.UserRefId)
+		if err != nil {
+			logrus.Error(err)
+		}
+
+		ctx.Set("UserId", user.Id.Hex())
+		ctx.Set("UserRefId", claims.UserRefId)
+
+		logrus.Info("UserRefId: " + claims.UserRefId)
+		logrus.Info("UserId: " + user.Id.Hex())
 		return
 	}
 }
