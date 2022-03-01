@@ -30,13 +30,14 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
+		var expireDate = time.Now().Add(config.AccessTokenTime)
 		ref := form.Reference{
 			UserId:      user.Id,
 			Type:        constant.AccessToken,
 			Objective:   constant.AccessApi,
 			Channel:     "USERNAME",
 			ChannelInfo: user.Username,
-			ExpireDate:  time.Now().Add(config.AccessTokenTime),
+			ExpireDate:  expireDate,
 			Status:      constant.ACTIVE,
 		}
 		userRef, err := userEntity.CreateVerification(ref)
@@ -44,7 +45,7 @@ func Login(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, userRef.ExpireDate)
+		token := middlewares.GenerateJwtToken(userRef.Id.Hex(), user.Role, expireDate)
 		result := gin.H{
 			"accessToken": token,
 		}

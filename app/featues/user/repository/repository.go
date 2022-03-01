@@ -15,10 +15,7 @@ import (
 	"time"
 )
 
-var Entity IUser
-
 type userEntity struct {
-	resource   *db.Resource
 	userRepo   *mongo.Collection
 	verifyRepo *mongo.Collection
 }
@@ -47,9 +44,9 @@ type IUser interface {
 func NewUserEntity(resource *db.Resource) IUser {
 	userRepo := resource.DB.Collection("users")
 	verifyRepo := resource.DB.Collection("verifications")
-	Entity = &userEntity{resource: resource, userRepo: userRepo, verifyRepo: verifyRepo}
-	_, _ = Entity.CreateIndex()
-	return Entity
+	var entity IUser = &userEntity{userRepo: userRepo, verifyRepo: verifyRepo}
+	_, _ = entity.CreateIndex()
+	return entity
 }
 
 func (entity *userEntity) CreateIndex() (string, error) {

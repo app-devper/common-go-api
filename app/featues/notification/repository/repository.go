@@ -12,11 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var Entity INotification
-
 type notificationEntity struct {
-	resource *db.Resource
-	repo     *mongo.Collection
+	repo *mongo.Collection
 }
 
 type INotification interface {
@@ -26,8 +23,8 @@ type INotification interface {
 
 func NewNotificationEntity(resource *db.Resource) INotification {
 	pushRepo := resource.DB.Collection("push_devices")
-	Entity = &notificationEntity{resource: resource, repo: pushRepo}
-	return Entity
+	var entity INotification = &notificationEntity{repo: pushRepo}
+	return entity
 }
 
 func (entity *notificationEntity) Subscription(form form.Subscription) (*model.Subscription, error) {
