@@ -14,10 +14,7 @@ import (
 	"time"
 )
 
-var Entity ICategory
-
 type categoryEntity struct {
-	resource     *db.Resource
 	categoryRepo *mongo.Collection
 }
 
@@ -33,12 +30,12 @@ type ICategory interface {
 
 func NewCategoryEntity(resource *db.Resource) ICategory {
 	categoryRepo := resource.DB.Collection("categories")
-	Entity = &categoryEntity{resource: resource, categoryRepo: categoryRepo}
-	_, _ = Entity.CreateIndex()
-	return Entity
+	var entity ICategory = &categoryEntity{categoryRepo: categoryRepo}
+	_, _ = entity.CreateIndex()
+	return entity
 }
 
-func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, error) {
+func (entity *categoryEntity) UpdateDefaultCategoryById(id string) (*model.Category, error) {
 	logrus.Info("UpdateDefaultCategoryById")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
@@ -70,7 +67,7 @@ func (entity categoryEntity) UpdateDefaultCategoryById(id string) (*model.Catego
 	return &data, nil
 }
 
-func (entity categoryEntity) GetCategoryAll() ([]model.Category, error) {
+func (entity *categoryEntity) GetCategoryAll() ([]model.Category, error) {
 	logrus.Info("GetCategoryAll")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
@@ -94,7 +91,7 @@ func (entity categoryEntity) GetCategoryAll() ([]model.Category, error) {
 	return items, nil
 }
 
-func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category, error) {
+func (entity *categoryEntity) CreateCategory(form form.Category) (*model.Category, error) {
 	logrus.Info("CreateCategory")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
@@ -113,7 +110,7 @@ func (entity categoryEntity) CreateCategory(form form.Category) (*model.Category
 	return &data, nil
 }
 
-func (entity categoryEntity) GetCategoryById(id string) (*model.Category, error) {
+func (entity *categoryEntity) GetCategoryById(id string) (*model.Category, error) {
 	logrus.Info("GetCategoryById")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
@@ -126,7 +123,7 @@ func (entity categoryEntity) GetCategoryById(id string) (*model.Category, error)
 	return &data, nil
 }
 
-func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, error) {
+func (entity *categoryEntity) RemoveCategoryById(id string) (*model.Category, error) {
 	logrus.Info("RemoveCategoryById")
 	ctx, cancel := utils.InitContext()
 	defer cancel()
@@ -143,7 +140,7 @@ func (entity categoryEntity) RemoveCategoryById(id string) (*model.Category, err
 	return &data, nil
 }
 
-func (entity categoryEntity) UpdateCategoryById(id string, form form.Category) (*model.Category, error) {
+func (entity *categoryEntity) UpdateCategoryById(id string, form form.Category) (*model.Category, error) {
 	logrus.Info("UpdateCategoryById")
 	ctx, cancel := utils.InitContext()
 	defer cancel()

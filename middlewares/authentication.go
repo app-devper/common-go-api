@@ -13,9 +13,6 @@ import (
 	"time"
 )
 
-// Create the JWT key used to create the signature
-var jwtKey = []byte(os.Getenv("SECRET_KEY"))
-
 type AccessClaims struct {
 	UserRefId string `json:"userRefId"`
 	Role      string `json:"role"`
@@ -29,6 +26,7 @@ type ActionClaims struct {
 }
 
 func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) string {
+	var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 	claims := &AccessClaims{
 		UserRefId: userRefId,
 		Role:      role,
@@ -47,6 +45,7 @@ func GenerateJwtToken(userRefId string, role string, expirationTime time.Time) s
 }
 
 func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
+	var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("Authorization")
 		if token == "" {
@@ -89,25 +88,6 @@ func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		if userRef.ExpireDate.Before(time.Now()) {
-			err := errors.New("token invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		user, err := userEntity.GetUserById(userRef.UserId.Hex())
-		if err != nil {
-			logrus.Error(err)
-		}
-		if user == nil {
-			err := errors.New("user invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		if user.Status != constant.ACTIVE {
-			err := errors.New("user not active")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
 
 		ctx.Set("UserRefId", claims.UserRefId)
 		ctx.Set("UserId", userRef.UserId.Hex())
@@ -121,6 +101,7 @@ func RequireAuthenticated(userEntity repository.IUser) gin.HandlerFunc {
 }
 
 func GenerateActionToken(userRefId string, objective string, expirationTime time.Time) string {
+	var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 	claims := &ActionClaims{
 		UserRefId: userRefId,
 		Objective: objective,
@@ -137,6 +118,7 @@ func GenerateActionToken(userRefId string, objective string, expirationTime time
 }
 
 func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
+	var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("X-Action-Token")
 		if token == "" {
@@ -173,28 +155,12 @@ func RequireActionToken(userEntity repository.IUser) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		if userRef.ExpireDate.Before(time.Now()) {
-			err := errors.New("token invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		user, err := userEntity.GetUserById(userRef.UserId.Hex())
-		if user == nil {
-			err := errors.New("user invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		if user.Status != constant.ACTIVE {
-			err := errors.New("user not active")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
 
-		ctx.Set("UserId", user.Id.Hex())
+		ctx.Set("UserId", userRef.UserId.Hex())
 		ctx.Set("UserRefId", claims.UserRefId)
 
+		logrus.Info("UserId: " + userRef.UserId.Hex())
 		logrus.Info("UserRefId: " + claims.UserRefId)
-		logrus.Info("UserId: " + user.Id.Hex())
 		return
 	}
 }

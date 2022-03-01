@@ -14,10 +14,7 @@ import (
 	"time"
 )
 
-var Entity IProduct
-
 type productEntity struct {
-	resource    *db.Resource
 	productRepo *mongo.Collection
 	lotRepo     *mongo.Collection
 }
@@ -43,9 +40,9 @@ type IProduct interface {
 func NewProductEntity(resource *db.Resource) IProduct {
 	productRepo := resource.DB.Collection("products")
 	lotRepo := resource.DB.Collection("product_lots")
-	Entity = &productEntity{resource: resource, productRepo: productRepo, lotRepo: lotRepo}
-	_, _ = Entity.CreateIndex()
-	return Entity
+	var entity IProduct = &productEntity{productRepo: productRepo, lotRepo: lotRepo}
+	_, _ = entity.CreateIndex()
+	return entity
 }
 
 func (entity *productEntity) CreateIndex() (string, error) {

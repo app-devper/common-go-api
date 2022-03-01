@@ -14,10 +14,7 @@ import (
 	"time"
 )
 
-var Entity IOrder
-
 type orderEntity struct {
-	resource      *db.Resource
 	orderRepo     *mongo.Collection
 	orderItemRepo *mongo.Collection
 	paymentRepo   *mongo.Collection
@@ -53,8 +50,8 @@ func NewOrderEntity(resource *db.Resource) IOrder {
 	orderRepo := resource.DB.Collection("orders")
 	orderItemRepo := resource.DB.Collection("order_items")
 	paymentRepo := resource.DB.Collection("payments")
-	Entity = &orderEntity{resource: resource, orderRepo: orderRepo, orderItemRepo: orderItemRepo, paymentRepo: paymentRepo}
-	return Entity
+	var entity IOrder = &orderEntity{orderRepo: orderRepo, orderItemRepo: orderItemRepo, paymentRepo: paymentRepo}
+	return entity
 }
 
 func (entity *orderEntity) CreateOrder(form form.Order) (*model.Order, error) {
