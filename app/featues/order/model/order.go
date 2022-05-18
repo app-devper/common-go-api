@@ -8,7 +8,6 @@ import (
 type Order struct {
 	Id          primitive.ObjectID `bson:"_id" json:"id"`
 	Status      string             `bson:"status" json:"status"`
-	Message     string             `bson:"message" json:"message"`
 	CreatedBy   string             `bson:"createdBy" json:"createdBy"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
 	UpdatedBy   string             `bson:"updatedBy" json:"updatedBy"`
@@ -21,7 +20,6 @@ type Order struct {
 type OrderDetail struct {
 	Id          primitive.ObjectID `bson:"_id" json:"id"`
 	Status      string             `bson:"status" json:"status"`
-	Message     string             `bson:"message" json:"message"`
 	CreatedBy   string             `bson:"createdBy" json:"createdBy"`
 	CreatedDate time.Time          `bson:"createdDate" json:"createdDate"`
 	UpdatedBy   string             `bson:"updatedBy" json:"updatedBy"`
